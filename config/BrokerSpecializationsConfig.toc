@@ -1,0 +1,15 @@
+## Interface: 70000
+## Title: Broker Specializations |cFFC79C6E[|cFFABD473Configuration|cFFC79C6E]
+## Notes: The configuration panel of Broker Specializations.
+## Author: Shenton
+## LoadOnDemand: true
+## Dependencies: Broker_Specializations
+## OptionalDeps: Ace3
+
+#@no-lib-strip@
+Libs\AceDBOptions-3.0\AceDBOptions-3.0.xml
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+Libs\AceConfig-3.0\AceConfig-3.0.xml
+#@end-no-lib-strip@
+
+Core.lua
