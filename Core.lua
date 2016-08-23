@@ -15,7 +15,9 @@
 -- GLOBALS: GetEquipmentSetInfo, UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, GetEquipmentSetInfoByName
 -- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame, InterfaceOptions_AddCategory
 -- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
--- GLOBALS: GameTooltip
+-- GLOBALS: GameTooltip, BINDING_HEADER_BROKERSPECIALIZATIONS, BINDING_NAME_BROKERSPECIALIZATIONSONE
+-- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSTWO, BINDING_NAME_BROKERSPECIALIZATIONSTHREE
+-- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSFOUR, BINDING_NAME_BROKERSPECIALIZATIONSDUAL
 
 --[[-------------------------------------------------------------------------------
     Global to local
@@ -25,6 +27,9 @@ local ipairs = ipairs;
 local select = select;
 local table = table;
 local _G = _G;
+local tonumber = tonumber;
+local string = string;
+local type = type;
 
 --[[-------------------------------------------------------------------------------
     Libs & addon global
