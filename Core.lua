@@ -42,6 +42,17 @@ A.L = L;
 A.icon = LibStub("LibDBIcon-1.0");
 
 --[[-------------------------------------------------------------------------------
+    Bindings names
+-------------------------------------------------------------------------------]]--
+
+BINDING_HEADER_BROKERSPECIALIZATIONS = L["Broker Specializations"];
+BINDING_NAME_BROKERSPECIALIZATIONSONE = L["Switch to specialization one"];
+BINDING_NAME_BROKERSPECIALIZATIONSTWO = L["Switch to specialization two"];
+BINDING_NAME_BROKERSPECIALIZATIONSTHREE = L["Switch to specialization three"];
+BINDING_NAME_BROKERSPECIALIZATIONSFOUR = L["Switch to specialization four"];
+BINDING_NAME_BROKERSPECIALIZATIONSDUAL = L["Dual Specialization switch"];
+
+--[[-------------------------------------------------------------------------------
     Variables
 -------------------------------------------------------------------------------]]--
 
@@ -120,10 +131,18 @@ function A:ShowHideMinimap()
     end
 end
 
+function A:SetBindingsNames()
+    BINDING_NAME_BROKERSPECIALIZATIONSONE = A.specDB[1] and L["Switch to %s"]:format(A.specDB[1].name) or L["Switch to specialization one"];
+    BINDING_NAME_BROKERSPECIALIZATIONSTWO = A.specDB[2] and L["Switch to %s"]:format(A.specDB[2].name) or L["Switch to specialization two"];
+    BINDING_NAME_BROKERSPECIALIZATIONSTHREE = A.specDB[3] and L["Switch to %s"]:format(A.specDB[3].name) or L["Switch to specialization three"];
+    BINDING_NAME_BROKERSPECIALIZATIONSFOUR = A.specDB[4] and L["Switch to %s"]:format(A.specDB[4].name) or L["Switch to specialization four"];
+end
+
 --- Called on load, or when switching profile
 function A:SetEverything()
     A.currentSpec = GetSpecialization();
     A:SetSpecializationsDatabase();
+    A:SetBindingsNames()
     A:SetLootSpecOptions();
     A:SetGearSetsDatabase();
     A:UpdateBroker();
@@ -288,6 +307,8 @@ end
 
 --- Switch between two defined spec
 function A:DualSwitch()
+    if ( not A.db.profile.dualSpecEnabled ) then return; end
+
     A:SetSpecialization(A:DualSwitchTo());
 end
 

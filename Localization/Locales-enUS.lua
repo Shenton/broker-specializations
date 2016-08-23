@@ -32,6 +32,14 @@ L["Not available"] = true;
 L["Current specialization ( %s )"] = true;
 L["Not defined"] = true;
 
+-- Bindings
+L["Switch to specialization one"] = true;
+L["Switch to specialization two"] = true;
+L["Switch to specialization three"] = true;
+L["Switch to specialization four"] = true;
+L["Dual Specialization switch"] = true;
+L["Switch to %s"] = true;
+
 -- DropDown
 L["Specializations switch"] = true;
 L["Gear set"] = true;
