@@ -6,6 +6,30 @@
     Core.lua
 -------------------------------------------------------------------------------]]--
 
+--[[-------------------------------------------------------------------------------
+    FindGlobals
+-------------------------------------------------------------------------------]]--
+
+-- GLOBALS: PlaySound, DEFAULT_CHAT_FRAME, GetSpecialization, GetNumSpecializations, GetSpecializationInfo
+-- GLOBALS: GetLootSpecialization, UseEquipmentSet, SetLootSpecialization, SetSpecialization, GetNumEquipmentSets
+-- GLOBALS: GetEquipmentSetInfo, UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, GetEquipmentSetInfoByName
+-- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame, InterfaceOptions_AddCategory
+-- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
+-- GLOBALS: GameTooltip
+
+--[[-------------------------------------------------------------------------------
+    Global to local
+-------------------------------------------------------------------------------]]--
+
+local ipairs = ipairs;
+local select = select;
+local table = table;
+local _G = _G;
+
+--[[-------------------------------------------------------------------------------
+    Libs & addon global
+-------------------------------------------------------------------------------]]--
+
 -- Ace libs (<3)
 local A = LibStub("AceAddon-3.0"):NewAddon("Broker_Specializations", "AceConsole-3.0", "AceEvent-3.0");
 local L = LibStub("AceLocale-3.0"):GetLocale("Broker_Specializations", false);
@@ -265,6 +289,7 @@ end
 
 function A:GetCurrentGearSet()
     local num = GetNumEquipmentSets();
+    local name, icon, _, current;
 
     if ( num > 0 ) then
         for i=1,num do
