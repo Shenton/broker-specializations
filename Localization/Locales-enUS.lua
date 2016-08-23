@@ -30,6 +30,7 @@ L["Text"] = true;
 -- Common
 L["Not available"] = true;
 L["Current specialization ( %s )"] = true;
+L["Not defined"] = true;
 
 -- DropDown
 L["Specializations switch"] = true;
@@ -72,8 +73,13 @@ L["Specialization Two"] = true;
 L["Select the second specialization for the Dual mode."] = true;
 
 -- Tooltip
-L["Current specialization"] = true;
-L["Current equipment set"] = true;
-L["Current loot specialization"] = true;
+L["Current specialization: %s"] = true;
+L["Current equipment set: %s"] = true;
+L["Current loot specialization: %s"] = true;
+L["Dual specialization mode is enabled"] = true;
+L["Switch to: %s"] = true;
+L["With equipment set: %s"] = true;
+L["And loot specialization: %s"] = true;
 L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
+L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 end

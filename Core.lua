@@ -203,7 +203,8 @@ function A:SetGearAndLootAfterSwitch()
 
     if ( A.db.profile.switchGearWithSpec ) then
         if ( A.db.profile.specOptions[specID].gearSet ) then
-            UseEquipmentSet(A.db.profile.specOptions[specID].gearSet);
+            local name = A:GetGearSetInfos(A.db.profile.specOptions[specID].gearSet);
+            UseEquipmentSet(name);
         end
     end
 
@@ -224,26 +225,70 @@ function A:SetSpecialization(specIndex)
     SetSpecialization(specIndex);
 end
 
---- Switch between two defined spec
-function A:DualSwitch()
+--- Return the specialization index Dual mode should switch to
+function A:DualSwitchTo()
     if ( A.numSpecializations > 2 ) then
-        local current = GetSpecialization();
-
-        if ( current == A.db.profile.dualSpecOne ) then
-            A:SetSpecialization(A.db.profile.dualSpecTwo);
-        elseif ( current == A.db.profile.dualSpecTwo ) then
-            A:SetSpecialization(A.db.profile.dualSpecOne);
-        else
-            A:SetSpecialization(A.db.profile.dualSpecOne);
+        if ( A.currentSpec == A.db.profile.dualSpecOne ) then
+            return A.db.profile.dualSpecTwo;
+        elseif ( A.currentSpec == A.db.profile.dualSpecTwo ) then
+            return A.db.profile.dualSpecOne;
+        else -- If the current spec is not a defined one, default to the first
+            return A.db.profile.dualSpecOne;
         end
     else -- Demon Hunter, easy mode
-        if ( GetSpecialization() == 1 ) then
-            A:SetSpecialization(2);
+        if ( A.currentSpec == 1 ) then
+            return 2;
         else
-            A:SetSpecialization(1);
+            return 1;
         end
-        
     end
+
+    -- Return something in case everything fail
+    return 1;
+end
+
+--- Return informations about the Dual spec switched to
+function A:DualSpecSwitchToInfos()
+    local switchToIndex = A:DualSwitchTo();
+    local name, icon, gearSet, gearSetIcon, lootName, lootIcon, _;
+
+    -- Those should be always available
+    name = A.specDB[switchToIndex].name;
+    icon = A.specDB[switchToIndex].icon;
+
+    -- Those are user defined and can be nil
+    if ( A.db.profile.specOptions[A.specDB[switchToIndex].id] ) then
+        if ( A.db.profile.specOptions[A.specDB[switchToIndex].id].gearSet ) then
+            gearSet, gearSetIcon = A:GetGearSetInfos(A.db.profile.specOptions[A.specDB[switchToIndex].id].gearSet);
+        else
+            gearSet = L["Not defined"];
+            gearSetIcon = A.questionMark;
+        end
+
+        if ( A.db.profile.specOptions[A.specDB[switchToIndex].id].lootSpec ) then
+            if ( A.db.profile.specOptions[A.specDB[switchToIndex].id].lootSpec == 0 ) then
+                lootName = L["Current specialization ( %s )"]:format(name);
+                lootIcon = icon;
+            else
+                _, _, lootName, lootIcon = A:GetSpecInfosByID(A.db.profile.specOptions[A.specDB[switchToIndex].id].lootSpec);
+            end
+        else
+            lootName = L["Not defined"];
+            lootIcon = A.questionMark;
+        end
+    else
+        gearSet = L["Not defined"];
+        gearSetIcon = A.questionMark;
+        lootName = L["Not defined"];
+        lootIcon = A.questionMark;
+    end
+
+    return name, icon, gearSet, gearSetIcon, lootName, lootIcon;
+end
+
+--- Switch between two defined spec
+function A:DualSwitch()
+    A:SetSpecialization(A:DualSwitchTo());
 end
 
 --- Called on load, will add spec table to the database option if missing
@@ -287,6 +332,10 @@ function A:SetGearSetsDatabase()
     end
 end
 
+--- Return informations about the current equipped gear set
+-- I could have used the gearSetDB table
+-- but for that I will have to monitor every modification of the user equipment
+-- and those events fire a lot
 function A:GetCurrentGearSet()
     local num = GetNumEquipmentSets();
     local name, icon, _, current;
@@ -297,6 +346,26 @@ function A:GetCurrentGearSet()
 
             if ( current ) then
                 return name, icon;
+            end
+        end
+    end
+
+    return L["None"], A.questionMark;
+end
+
+--- Return informations about a gear set
+-- @param gearSet The gear set name or ID
+function A:GetGearSetInfos(gearSet)
+    if ( type(gearSet) == "number" ) then
+        for _,v in ipairs(A.gearSetsDB) do
+            if ( gearSet == v.id ) then
+                return v.name, v.icon, v.id;
+            end
+        end
+    else
+        for _,v in ipairs(A.gearSetsDB) do
+            if ( gearSet == v.name ) then
+                return v.name, v.icon, v.id;
             end
         end
     end
@@ -693,6 +762,7 @@ function A:OnEnable()
         tocname = "Broker_Specializations",
         OnClick = function(self, button)
             if (button == "LeftButton") then
+                --ShenDump(A.gearSetsDB)
                 if ( A.db.profile.dualSpecEnabled ) then
                     A:DualSwitch();
                 end
@@ -711,17 +781,30 @@ function A:OnEnable()
             tooltip:AddDoubleLine(A.color["PRIEST"]..L["Broker Specializations"], A.color["GREEN"].." v"..A.version);
             tooltip:AddLine(" ");
 
-            local specIndex, specID, specName, specIcon = A:GetCurrentSpecInfos();
-            local lootSpecID, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
+            local _, _, specName, specIcon = A:GetCurrentSpecInfos();
+            local _, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
             local gearSet, gearIcon = A:GetCurrentGearSet();
 
-            tooltip:AddLine(L["Current specialization"]..": |T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
-            tooltip:AddLine(L["Current equipment set"]..": |T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
-            tooltip:AddLine(L["Current loot specialization"]..": |T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+            tooltip:AddLine(L["Current specialization: %s"]:format("|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName));
+            tooltip:AddLine(L["Current equipment set: %s"]:format("|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet));
+            tooltip:AddLine(L["Current loot specialization: %s"]:format("|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText));
             tooltip:AddLine(" ");
 
-            --tooltip:AddLine(" ");
-            tooltip:AddLine(L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."]);
+            if ( A.db.profile.dualSpecEnabled ) then
+                specName, specIcon, gearSet, gearIcon, lootSpecText, lootSpecIcon = A:DualSpecSwitchToInfos();
+
+                tooltip:AddLine(A.color["PRIEST"]..L["Dual specialization mode is enabled"]);
+                tooltip:AddLine(L["Switch to: %s"]:format("|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName));
+                tooltip:AddLine(L["With equipment set: %s"]:format("|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet));
+                tooltip:AddLine(L["And loot specialization: %s"]:format("|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText));
+                tooltip:AddLine(" ");
+            end
+
+            if ( A.db.profile.dualSpecEnabled ) then
+                tooltip:AddLine(L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."]);
+            else
+                tooltip:AddLine(L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."]);
+            end
         end,
     });
 

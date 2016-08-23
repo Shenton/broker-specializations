@@ -286,8 +286,8 @@ function A:ConfigurationPanel()
                 desc = L["Select this to use gear set %s when switching to specialization %s."]:format(vv.name, v.name),
                 --width = "full",
                 type = "toggle",
-                set = function(info, val) A.db.profile.specOptions[v.id].gearSet = val and vv.name or nil; end,
-                get = function() return A.db.profile.specOptions[v.id].gearSet == vv.name and 1 or nil; end,
+                set = function(info, val) A.db.profile.specOptions[v.id].gearSet = val and vv.id or nil; end,
+                get = function() return A.db.profile.specOptions[v.id].gearSet == vv.id and 1 or nil; end,
             };
             order = order + 1;
         end
