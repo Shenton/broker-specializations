@@ -100,7 +100,43 @@ A.showLootSpecModes =
     Common methods
 -------------------------------------------------------------------------------]]--
 
-function A:SlashCommand()
+function A:SlashCommand(arg, ...)
+    if ( arg == "" ) then
+        if ( A.db.profile.dualSpecEnabled ) then
+            A:DualSwitch();
+        else
+            A:OpenConfigPanel();
+        end
+    elseif ( arg == "config" ) then
+        A:OpenConfigPanel();
+    elseif ( arg == "minimap" ) then
+        A.db.profile.minimap.hide = not A.db.profile.minimap.hide;
+        A:ShowHideMinimap();
+    elseif ( arg == "help" ) then
+        A:Message(L["COMMAND_HELP"]);
+    else
+        if ( tonumber(arg) ) then -- A number was provided, this is a spec switch
+            arg = tonumber(arg);
+
+            if ( A.specDB[arg] ) then -- The spec exists
+                A:SetSpecialization(arg);
+                return; -- break
+            end
+        end
+
+        -- Searching for spec name
+        arg = string.lower(arg);
+
+        for k,v in ipairs(A.specDB) do
+            if ( arg == string.lower(v.name) ) then -- Got a match
+                A:SetSpecialization(k);
+                return; -- break
+            end
+        end
+
+        -- Display the commands help
+        A:Message(L["COMMAND_HELP"]);
+    end
 end
 
 --- Send a message to the chat frame with the addon name colored
@@ -760,6 +796,7 @@ end
 --- AceAddon callback
 -- Called during the PLAYER_LOGIN event
 function A:OnEnable()
+    A:RegisterChatCommand("brokerspecializations", "SlashCommand");
     A:RegisterChatCommand("brokerspec", "SlashCommand");
     A:RegisterChatCommand("spec", "SlashCommand");
     A:RegisterChatCommand("bs", "SlashCommand");

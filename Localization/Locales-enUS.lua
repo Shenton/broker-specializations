@@ -90,4 +90,12 @@ L["With equipment set: %s"] = true;
 L["And loot specialization: %s"] = true;
 L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
+
+-- Command help
+L["COMMAND_HELP"] = [["Available commands: /brokerspecializations, /brokerspec, /spec, /bs. They are aliases, to prevent compatibility issues.
+Without argument it will switch to the defined dual specialization if enabled or it will open the configuration panel.
+/bs config, will display the configuration panel.
+/bs minimap, will toggle the minimap icon visibility.
+/bs followed by a number (1 to 4) will switch to a specialization, to find the number look at the add-on menu the top specialization is 1.
+/bs followed by a specialization name will switch to it, this is not case sensitive."]]
 end
