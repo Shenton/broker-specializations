@@ -15,10 +15,15 @@ L["Broker Specializations"] = true;
 L["Automation"] = true;
 
 L["Close"] = true;
+L["Configuration"] = true;
+
+L["Enabled"] = true;
 
 L["Icon"] = true;
 
 L["Minimap"] = true;
+
+L["None"] = true;
 
 L["Text"] = true;
 
@@ -34,6 +39,8 @@ L["Other switches"] = true;
 
 -- Messages
 L["Failed to load configuration, reason: %s."] = true;
+L["Cannot switch specialization in combat."] = true;
+L["You cannot select the same specialization with Dual Specialization Mode."] = true;
 
 -- Config
 L["Broker Specializations configuration loader"] = true;
@@ -57,6 +64,12 @@ L["Select this to use current specialization for loot specialization when switch
 L["Select this to use %s for loot specialization when switching to specialization %s."] = true;
 L["Display minimap button"] = true;
 L["Display the minimaps icon. Uncheck this to hide it."] = true;
+L["Dual Specialization"] = true;
+L["Enable the Dual Specialization mode. Switch between two defined specializations with a single click."] = true;
+L["Specialization One"] = true;
+L["Select the first specialization for the Dual mode."] = true;
+L["Specialization Two"] = true;
+L["Select the second specialization for the Dual mode."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;

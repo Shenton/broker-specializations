@@ -52,6 +52,7 @@ A.color =
     RESET = "|r",
 };
 
+A.questionMark = "Interface\\ICONS\\INV_Misc_QuestionMark";
 A.lootBagIcon = "|TInterface\\ICONS\\INV_Misc_Bag_10_Green:16:16:0:0|t";
 
 A.showLootSpecModes =
@@ -61,15 +62,16 @@ A.showLootSpecModes =
 };
 
 --[[-------------------------------------------------------------------------------
-    Methods
+    Common methods
 -------------------------------------------------------------------------------]]--
 
 function A:SlashCommand()
 end
 
 --- Send a message to the chat frame with the addon name colored
--- @param text The message to display
+-- @param text String, The message to display
 -- @param color Bool, if true will color in red
+-- @param silent Bool, if true will not play the whisper sound
 function A:Message(text, color, silent)
     if ( color == "debug" ) then
         color = A.color["BLUE"];
@@ -86,10 +88,32 @@ function A:Message(text, color, silent)
     DEFAULT_CHAT_FRAME:AddMessage(color..L["Broker Specializations"]..": "..A.color["RESET"]..text);
 end
 
+function A:ShowHideMinimap()
+    if ( A.db.profile.minimap.hide ) then
+        A.icon:Hide("Broker_SpecializationsLDB");
+    else
+        A.icon:Show("Broker_SpecializationsLDB");
+    end
+end
+
+--- Called on load, or when switching profile
+function A:SetEverything()
+    A.currentSpec = GetSpecialization();
+    A:SetSpecializationsDatabase();
+    A:SetLootSpecOptions();
+    A:SetGearSetsDatabase();
+    A:UpdateBroker();
+end
+
+--[[-------------------------------------------------------------------------------
+    Specializations methods
+-------------------------------------------------------------------------------]]--
+
 function A:SetSpecializationsDatabase()
     A.specDB = {};
+    A.numSpecializations = GetNumSpecializations();
 
-    for i=1,GetNumSpecializations() do
+    for i=1,A.numSpecializations do
         local id, name, _, icon = GetSpecializationInfo(i);
 
         local current = A.currentSpec == i and 1 or nil;
@@ -144,6 +168,121 @@ function A:GetCurrentLootSpecInfos()
     end
 end
 
+--- This is called when switching specialization
+-- It will change the gear set and the loot spec
+function A:SetGearAndLootAfterSwitch()
+    if ( A.inCombat ) then
+        A.setGearAndLootAfterSwitchDelayed = 1;
+    end
+
+    local _, specID = A:GetCurrentSpecInfos();
+
+    if ( A.db.profile.switchGearWithSpec ) then
+        if ( A.db.profile.specOptions[specID].gearSet ) then
+            UseEquipmentSet(A.db.profile.specOptions[specID].gearSet);
+        end
+    end
+
+    if ( A.db.profile.switchLootWithSpec ) then
+        if ( A.db.profile.specOptions[specID].lootSpec ) then
+            SetLootSpecialization(A.db.profile.specOptions[specID].lootSpec);
+        end
+    end
+end
+
+--- Will call SetSpecialization() if not in combat
+function A:SetSpecialization(specIndex)
+    if ( A.inCombat ) then
+        A:Message(L["Cannot switch specialization in combat."], 1);
+        return;
+    end
+
+    SetSpecialization(specIndex);
+end
+
+--- Switch between two defined spec
+function A:DualSwitch()
+    if ( A.numSpecializations > 2 ) then
+        local current = GetSpecialization();
+
+        if ( current == A.db.profile.dualSpecOne ) then
+            A:SetSpecialization(A.db.profile.dualSpecTwo);
+        elseif ( current == A.db.profile.dualSpecTwo ) then
+            A:SetSpecialization(A.db.profile.dualSpecOne);
+        else
+            A:SetSpecialization(A.db.profile.dualSpecOne);
+        end
+    else -- Demon Hunter, easy mode
+        if ( GetSpecialization() == 1 ) then
+            A:SetSpecialization(2);
+        else
+            A:SetSpecialization(1);
+        end
+        
+    end
+end
+
+--- Called on load, will add spec table to the database option if missing
+function A:SetLootSpecOptions()
+    local lootSpec = GetLootSpecialization();
+
+    for k,v in ipairs(A.specDB) do
+        if ( not A.db.profile.specOptions[v.id] ) then
+            A.db.profile.specOptions[v.id] =
+            {
+                lootSpec = lootSpec,
+            };
+        end
+    end
+end
+
+--[[-------------------------------------------------------------------------------
+    Gear sets methods
+-------------------------------------------------------------------------------]]--
+
+--- Set gear sets database
+function A:SetGearSetsDatabase()
+    local num = GetNumEquipmentSets();
+    local name, icon, id;
+
+    A.gearSetsDB = {};
+
+    if ( num > 0 ) then
+        for i=1,num do
+            name, icon, id = GetEquipmentSetInfo(i);
+
+            icon = icon or A.questionMark;
+
+            A.gearSetsDB[i] =
+            {
+                name = name,
+                icon = icon,
+                id = id,
+            };
+        end
+    end
+end
+
+function A:GetCurrentGearSet()
+    local num = GetNumEquipmentSets();
+
+    if ( num > 0 ) then
+        for i=1,num do
+            name, icon, _, current = GetEquipmentSetInfo(i);
+
+            if ( current ) then
+                return name, icon;
+            end
+        end
+    end
+
+    return L["None"], A.questionMark;
+end
+
+--[[-------------------------------------------------------------------------------
+    Data Broker methods
+-------------------------------------------------------------------------------]]--
+
 --- Get the Data Broker text
 function A:GetDataBrokerText(name)
     local text = "";
@@ -181,97 +320,6 @@ function A:UpdateBroker()
     A.ldb.icon = icon;
 end
 
---- Set gear sets database
-function A:SetGearSetsDatabase()
-    local num = GetNumEquipmentSets();
-    local name, icon, id;
-
-    A.gearSetsDB = {};
-
-    if ( num > 0 ) then
-        for i=1,num do
-            name, icon, id = GetEquipmentSetInfo(i);
-
-            icon = icon or "Interface\\ICONS\\INV_Misc_QuestionMark";
-
-            A.gearSetsDB[i] =
-            {
-                name = name,
-                icon = icon,
-                id = id,
-            };
-        end
-    end
-end
-
---- Used on load, will add spec table to the database option if missing
-function A:SetLootSpecOptions()
-    local lootSpec = GetLootSpecialization();
-
-    for k,v in ipairs(A.specDB) do
-        if ( not A.db.profile.specOptions[v.id] ) then
-            A.db.profile.specOptions[v.id] =
-            {
-                lootSpec = lootSpec,
-            };
-        end
-    end
-end
-
---- This is called when switching specialization
--- It will change the gear set and the loot spec
-function A:SetGearAndLootAfterSwitch()
-    if ( A.inCombat ) then
-        A.setGearAndLootAfterSwitchDelayed = 1;
-    end
-
-    local _, specID = A:GetCurrentSpecInfos();
-
-    if ( A.db.profile.switchGearWithSpec ) then
-        if ( A.db.profile.specOptions[specID].gearSet ) then
-            UseEquipmentSet(A.db.profile.specOptions[specID].gearSet);
-        end
-    end
-
-    if ( A.db.profile.switchLootWithSpec ) then
-        if ( A.db.profile.specOptions[specID].lootSpec ) then
-            SetLootSpecialization(A.db.profile.specOptions[specID].lootSpec);
-        end
-    end
-end
-
-function A:ShowHideMinimap()
-    if ( A.db.profile.minimap.hide ) then
-        A.icon:Hide("Broker_SpecializationsLDB");
-    else
-        A.icon:Show("Broker_SpecializationsLDB");
-    end
-end
-
-function A:GetCurrentGearSet()
-    local num = GetNumEquipmentSets();
-
-    if ( num > 0 ) then
-        for i=1,num do
-            name, icon, _, current = GetEquipmentSetInfo(i);
-
-            if ( current ) then
-                return name, icon;
-            end
-        end
-    end
-
-    return nil;
-end
-
-function A:SetEverything()
-    A.currentSpec = GetSpecialization();
-    A:SetSpecializationsDatabase();
-    A:SetLootSpecOptions();
-    A:SetGearSetsDatabase();
-    A:UpdateBroker();
-end
-
 --[[-------------------------------------------------------------------------------
     Dropdown menu
 -------------------------------------------------------------------------------]]--
@@ -304,7 +352,7 @@ local function DropdownMenu(self, level)
             info.text = v.name;
             info.icon = v.icon;
             info.disabled = v.current;
-            info.func = function() SetSpecialization(k); end;
+            info.func = function() A:SetSpecialization(k); end;
             UIDropDownMenu_AddButton(info, level);
         end
 
@@ -345,12 +393,13 @@ local function DropdownMenu(self, level)
         -- Gear sets switch
         info.text = L["Gear set"];
         info.value = "GEARSET";
-        info.disabled = nil;
+        info.disabled = GetNumEquipmentSets() == 0 and 1 or nil;
         UIDropDownMenu_AddButton(info, level);
 
         -- Loot specialization switch
         info.text = L["Loot specialization"];
         info.value = "LOOTSPEC";
+        info.disabled = nil;
         UIDropDownMenu_AddButton(info, level);
 
         -- Separator
@@ -373,8 +422,8 @@ local function DropdownMenu(self, level)
         };
         UIDropDownMenu_AddButton(info, level);
 
-        -- Close
-        info.text = L["Close"];
+        -- Configuration panel
+        info.text = L["Configuration"];
         info.icon = nil;
         info.keepShownOnClick = nil;
         info.hasArrow = nil;
@@ -383,6 +432,11 @@ local function DropdownMenu(self, level)
         info.notClickable = nil;
         info.iconOnly = nil;
         info.iconInfo = nil;
+        info.func = function() A:OpenConfigPanel(); end;
+        UIDropDownMenu_AddButton(info, level);
+
+        -- Close
+        info.text = L["Close"];
         info.func = function() CloseDropDownMenus(); end;
         UIDropDownMenu_AddButton(info, level);
     elseif ( level == 2 ) then
@@ -455,6 +509,9 @@ A.aceDefaultDB =
         switchGearWithSpec = nil,
         switchLootWithSpec = nil,
         specOptions = {},
+        dualSpecEnabled = nil,
+        dualSpecOne = 1,
+        dualSpecTwo = 2,
     },
 };
 
@@ -524,19 +581,6 @@ end
     Events
 -------------------------------------------------------------------------------]]--
 
-function A:PLAYER_REGEN_DISABLED()
-    A.inCombat = 1;
-end
-
-function A:PLAYER_REGEN_ENABLED()
-    if ( A.setGearAndLootAfterSwitchDelayed ) then
-        A:SetGearAndLootAfterSwitchDelayed();
-        A.setGearAndLootAfterSwitchDelayed = nil;
-    end
-
-    A.inCombat = nil;
-end
-
 function A:PLAYER_ENTERING_WORLD()
     A:SetEverything();
     A:UnregisterEvent("PLAYER_ENTERING_WORLD");
@@ -562,6 +606,27 @@ function A:EQUIPMENT_SETS_CHANGED()
     A:SetGearSetsDatabase();
 end
 
+function A:PLAYER_REGEN_DISABLED()
+    A.inCombat = 1;
+end
+
+function A:PLAYER_REGEN_ENABLED()
+    if ( A.setGearAndLootAfterSwitchDelayed ) then
+        A:SetGearAndLootAfterSwitchDelayed();
+        A.setGearAndLootAfterSwitchDelayed = nil;
+    end
+
+    A.inCombat = nil;
+end
+
+function A:PLAYER_LEVEL_UP(event, level)
+    if ( level >= 10) then
+        A:Enable();
+        A:PLAYER_ENTERING_WORLD();
+        A:UnregisterEvent("PLAYER_LEVEL_UP");
+    end
+end
+
 --[[-------------------------------------------------------------------------------
     Ace3 Init
 -------------------------------------------------------------------------------]]--
@@ -570,6 +635,11 @@ end
 -- Called after the addon is fully loaded
 function A:OnInitialize()
     A.db = LibStub("AceDB-3.0"):New("brokerSpecializationsDB", A.aceDefaultDB);
+
+    if ( UnitLevel("player") < 10 ) then
+        A:SetEnabledState(false);
+        A:RegisterEvent("PLAYER_LEVEL_UP");
+    end
 end
 
 --- AceAddon callback
@@ -594,11 +664,13 @@ function A:OnEnable()
         type = "data source",
         text = L["Not available"],
         label = L["Broker Specializations"],
-        icon = "Interface\\ICONS\\INV_Misc_QuestionMark",
+        icon = A.questionMark,
         tocname = "Broker_Specializations",
         OnClick = function(self, button)
             if (button == "LeftButton") then
-                --A:SwitchSpec();
+                if ( A.db.profile.dualSpecEnabled ) then
+                    A:DualSwitch();
+                end
             elseif ( button == "RightButton" ) then
                 if ( A.menuFrame.initialize ~= DropdownMenu ) then
                     CloseDropDownMenus();

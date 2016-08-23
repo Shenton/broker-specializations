@@ -11,6 +11,12 @@ local A = _G["BrokerSpecializationsGlobal"];
 local L = A.L;
 
 function A:ConfigurationPanel()
+    local dualSpecSelectValues = {};
+
+    for k,v in ipairs(A.specDB) do
+        dualSpecSelectValues[k] = "|T"..v.icon..":16:16:0:0|t "..v.name;
+    end
+
     local configPanel =
     {
         order = 0,
@@ -56,6 +62,60 @@ function A:ConfigurationPanel()
                                 type = "toggle",
                                 set = function() A.db.profile.switchLootWithSpec = not A.db.profile.switchLootWithSpec; end,
                                 get = function() return A.db.profile.switchLootWithSpec; end,
+                            },
+                        },
+                    },
+                    dualSpec =
+                    {
+                        order = 50,
+                        name = L["Dual Specialization"],
+                        type = "group",
+                        inline = true,
+                        args =
+                        {
+                            enabled =
+                            {
+                                order = 0,
+                                name = L["Enabled"],
+                                desc = L["Enable the Dual Specialization mode. Switch between two defined specializations with a single click."],
+                                width = "full",
+                                type = "toggle",
+                                set = function() A.db.profile.dualSpecEnabled = not A.db.profile.dualSpecEnabled; end,
+                                get = function() return A.db.profile.dualSpecEnabled; end,
+                            },
+                            selectSpecOne =
+                            {
+                                order = 1,
+                                name = L["Specialization One"],
+                                desc = L["Select the first specialization for the Dual mode."],
+                                disabled = not A.db.profile.dualSpecEnabled,
+                                type = "select",
+                                values = dualSpecSelectValues,
+                                set = function(info, val)
+                                    if ( val == A.db.profile.dualSpecTwo ) then
+                                        A:Message(L["You cannot select the same specialization with Dual Specialization Mode."], 1);
+                                    else
+                                        A.db.profile.dualSpecOne = val;
+                                    end
+                                end,
+                                get = function() return A.db.profile.dualSpecOne; end,
+                            },
+                            selectSpecTwo =
+                            {
+                                order = 2,
+                                name = L["Specialization Two"],
+                                desc = L["Select the second specialization for the Dual mode."],
+                                disabled = not A.db.profile.dualSpecEnabled,
+                                type = "select",
+                                values = dualSpecSelectValues,
+                                set = function(info, val)
+                                    if ( val == A.db.profile.dualSpecOne ) then
+                                        A:Message(L["You cannot select the same specialization with Dual Specialization Mode."], 1);
+                                    else
+                                        A.db.profile.dualSpecTwo = val;
+                                    end
+                                end,
+                                get = function() return A.db.profile.dualSpecTwo; end,
                             },
                         },
                     },
