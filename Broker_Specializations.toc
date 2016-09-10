@@ -3,7 +3,7 @@
 ## Notes: A Data Broker add-on for quickly switching your specialization with gear set and loot specialization.
 ## Author: Shenton
 ## SavedVariables: brokerSpecializationsDB
-## Version: 1.0.0
+## Version: 1.1.0
 ## OptionalDeps: Ace3, LibDBIcon-1.0
 
 #@no-lib-strip@
@@ -11,9 +11,11 @@ Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
 Libs\AceAddon-3.0\AceAddon-3.0.xml
 Libs\AceEvent-3.0\AceEvent-3.0.xml
+Libs\AceTimer-3.0\AceTimer-3.0.xml
 Libs\AceDB-3.0\AceDB-3.0.xml
 Libs\AceLocale-3.0\AceLocale-3.0.xml
 Libs\AceConsole-3.0\AceConsole-3.0.xml
+libs\LibQTip-1.0\LibQTip-1.0.lua
 #@end-no-lib-strip@
 
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
@@ -35,3 +37,5 @@ Localization\Locales-zhCN.lua
 Localization\Locales-zhTW.lua
 
 Core.lua
+
+Frames.xml

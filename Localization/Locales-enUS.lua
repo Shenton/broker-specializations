@@ -25,12 +25,17 @@ L["Minimap"] = true;
 
 L["None"] = true;
 
+L["Pet"] = true;
+
+L["Talents"] = true;
 L["Text"] = true;
+L["Tooltip"] = true;
 
 -- Common
 L["Not available"] = true;
 L["Current specialization ( %s )"] = true;
 L["Not defined"] = true;
+--L["Quick Talents"] = true;
 
 -- Bindings
 L["Switch to specialization one"] = true;
@@ -50,6 +55,8 @@ L["Other switches"] = true;
 L["Failed to load configuration, reason: %s."] = true;
 L["Cannot switch specialization in combat."] = true;
 L["You cannot select the same specialization with Dual Specialization Mode."] = true;
+L["You are resting."] = true;
+L["You are already buffed with %s."] = true;
 
 -- Config
 L["Broker Specializations configuration loader"] = true;
@@ -79,15 +86,20 @@ L["Specialization One"] = true;
 L["Select the first specialization for the Dual mode."] = true;
 L["Specialization Two"] = true;
 L["Select the second specialization for the Dual mode."] = true;
+L["Switch with tooltip"] = true;
+L["Enable this to use the tooltip to switch between your specializations."] = true;
+L["Informations"] = true;
+L["Add some informations to the tooltip."] = true;
 
 -- Tooltip
-L["Current specialization: %s"] = true;
-L["Current equipment set: %s"] = true;
-L["Current loot specialization: %s"] = true;
+L["Current specialization"] = true;
+L["Current equipment set"] = true;
+L["Current loot specialization"] = true;
 L["Dual specialization mode is enabled"] = true;
-L["Switch to: %s"] = true;
-L["With equipment set: %s"] = true;
-L["And loot specialization: %s"] = true;
+L["Switch to"] = true;
+L["With equipment set"] = true;
+L["And loot specialization"] = true;
+L["Pet specializations switch"] = true;
 L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 
@@ -97,5 +109,5 @@ Without argument it will switch to the defined dual specialization if enabled or
 /bs config, will display the configuration panel.
 /bs minimap, will toggle the minimap icon visibility.
 /bs followed by a number (1 to 4) will switch to a specialization, to find the number look at the add-on menu the top specialization is 1.
-/bs followed by a specialization name will switch to it, this is not case sensitive."]]
+/bs followed by a specialization name will switch to it, this is not case sensitive."]];
 end

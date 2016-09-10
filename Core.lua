@@ -35,16 +35,15 @@ local type = type;
     Libs & addon global
 -------------------------------------------------------------------------------]]--
 
--- Ace libs (<3)
-local A = LibStub("AceAddon-3.0"):NewAddon("Broker_Specializations", "AceConsole-3.0", "AceEvent-3.0");
+-- Libs (<3)
+local A = LibStub("AceAddon-3.0"):NewAddon("Broker_Specializations", "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0");
 local L = LibStub("AceLocale-3.0"):GetLocale("Broker_Specializations", false);
+A.icon = LibStub("LibDBIcon-1.0");
+A.tip = LibStub('LibQTip-1.0');
 
 -- Addon global
 _G["BrokerSpecializationsGlobal"] = A;
 A.L = L;
-
--- LibDBIcon
-A.icon = LibStub("LibDBIcon-1.0");
 
 --[[-------------------------------------------------------------------------------
     Bindings names
@@ -81,7 +80,7 @@ A.color =
     -- SHAMAN = "|cff0070de",
     -- WARLOCK = "|cff9482c9",
     -- WARRIOR = "|cffc79c6e",
-    -- POOR = "|cff9d9d9d",
+    POOR = "|cff9d9d9d",
     -- COMMON = "|cffffffff",
     -- UNCOMMON = "|cff1eff00",
     -- RARE = "|cff0070dd",
@@ -99,6 +98,28 @@ A.showLootSpecModes =
 {
     text = L["Text"],
     icon = L["Icon"],
+};
+
+A.talentsSwitchItems =
+{
+    { -- wod
+        141640, -- tome-of-the-clear-mind - require lvl 15, not usable above 100 - solo version
+        141641, -- codex-of-the-clear-mind - require lvl 15, not usable above 100 - group version
+    },
+    { -- legion
+        141446, -- tome-of-the-tranquil-mind - require lvl 15, no level restriction after that - solo version
+        141333, -- codex-of-the-tranquil-mind - require lvl 15, no level restriction after that - group version
+    },
+};
+
+A.talentsSwitchBuffs =
+{
+    -- wod <= 100
+    227563, -- tome-of-the-clear-mind
+    227565, -- codex-of-the-clear-mind
+    -- legion > 100
+    227041, -- tome-of-the-tranquil-mind
+    226234, -- codex-of-the-tranquil-mind
 };
 
 --[[-------------------------------------------------------------------------------
@@ -179,14 +200,39 @@ function A:SetBindingsNames()
     BINDING_NAME_BROKERSPECIALIZATIONSFOUR = A.specDB[4] and L["Switch to %s"]:format(A.specDB[4].name) or L["Switch to specialization four"];
 end
 
+--- "Smart" anchor, frame is clamped to screen, we just need TOP or BOTTOM
+-- @return point and relativePoint
+function A:SmartAnchor()
+    local s = UIParent:GetEffectiveScale();
+    local _, py = UIParent:GetCenter();
+    local _, y = GetCursorPosition();
+
+    py = py * s;
+
+    if ( y > py ) then
+        return "TOP", "BOTTOM";
+    else
+        return "BOTTOM", "TOP";
+    end
+end
+
 --- Called on load, or when switching profile
 function A:SetEverything()
+    A.playerClass = select(2, UnitClass("player"));
+
     A.currentSpec = GetSpecialization();
     A:SetSpecializationsDatabase();
+
+    if ( playerClass == "HUNTER" ) then
+        A.currentPetSpec = GetSpecialization(false, true);
+        A:SetPetSpecializationsDatabase();
+    end
+
     A:SetBindingsNames()
     A:SetLootSpecOptions();
     A:SetGearSetsDatabase();
     A:UpdateBroker();
+    A:SetTalentsSwitchBuffsNames();
 end
 
 --[[-------------------------------------------------------------------------------
@@ -203,6 +249,25 @@ function A:SetSpecializationsDatabase()
         local current = A.currentSpec == i and 1 or nil;
 
         A.specDB[i] =
+        {
+            id = id,
+            name = name,
+            icon = icon,
+            current = current,
+        };
+    end
+end
+
+function A:SetPetSpecializationsDatabase()
+    A.petSpecDB = {};
+    A.numSpecializations = GetNumSpecializations(false, true);
+
+    for i=1,A.numSpecializations do
+        local id, name, _, icon = GetSpecializationInfo(i, false, true);
+
+        local current = A.currentPetSpec == i and 1 or nil;
+
+        A.petSpecDB[i] =
         {
             id = id,
             name = name,
@@ -276,13 +341,13 @@ function A:SetGearAndLootAfterSwitch()
 end
 
 --- Will call SetSpecialization() if not in combat
-function A:SetSpecialization(specIndex)
+function A:SetSpecialization(specIndex, isPet)
     if ( A.inCombat ) then
         A:Message(L["Cannot switch specialization in combat."], 1);
         return;
     end
 
-    SetSpecialization(specIndex);
+    SetSpecialization(specIndex, isPet);
 end
 
 --- Return the specialization index Dual mode should switch to
@@ -477,6 +542,222 @@ function A:UpdateBroker()
 end
 
 --[[-------------------------------------------------------------------------------
+    Talents frame
+-------------------------------------------------------------------------------]]--
+
+function A:TalentsFrameOnLoad(self)
+    --self:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b);
+    --self:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b);
+    ButtonFrameTemplate_HidePortrait(self);
+    self.TitleText:SetText(L["Talents"]);
+    self.closeButton:SetText(L["Close"]);
+end
+
+function A:TalentsFrameOnShow(self)
+    PlaySound("igCharacterInfoOpen");
+    A:TalentsFrameUpdate();
+end
+
+function A:TalentsFrameUpdate()
+    local talentGroup = GetActiveSpecGroup(false);
+    local tiers = GetMaxTalentTier();
+
+    -- Talents
+    for i=1,7 do
+        if ( i <= tiers ) then -- Player got the level for this tier, setting and showing buttons
+            local _, selectedTalent = GetTalentTierInfo(i, talentGroup, false);
+
+            for j=1,3 do
+                local talentID, name, texture, selected, available = GetTalentInfo(i, j, talentGroup, false);
+                local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
+
+                button.talentGroup = talentGroupG;
+                button:SetID(talentID);
+                SetItemButtonTexture(button, texture);
+
+                if ( selectedTalent == 0 ) then
+                    button.icon:SetDesaturated(false);
+                else
+                    if ( selected ) then
+                        button.icon:SetDesaturated(false);
+                    else
+                        button.icon:SetDesaturated(true);
+                    end
+                end
+
+                button:Show();
+            end
+        else -- Player do not got the level for this tier, resetting and hiding buttons
+            for j=1,3 do
+                local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
+
+                button.talentGroup = nil;
+                button:SetID(0); -- SetID require a value
+                SetItemButtonTexture(button, "Interface\\ICONS\\INV_Misc_QuestionMark");
+                button.icon:SetDesaturated(false);
+                button:Hide();
+            end
+        end
+    end
+
+    -- Talents switch items
+    -- No need to check the minimum level requirement (which is 15)
+    -- If we are here the player got some talents to choose from
+    local playerLevel = UnitLevel("player");
+    local solo, group, count, countBank;
+    local switchItemsHeight = 0;
+    local button1 = _G["BrokerSpecializationsTalentsFrameItemButton1"];
+    local button2 = _G["BrokerSpecializationsTalentsFrameItemButton2"];
+
+    for k,v in ipairs(A.talentsSwitchItems) do
+        for kk,vv in ipairs(v) do
+            count = GetItemCount(vv, false);
+            countBank = GetItemCount(vv, true);
+
+            if ( (count > 0 or (count == 0 and countBank > 0)) -- We got this item, or we got it in the bank
+            and ((playerLevel <= 100 and k == 1) or (playerLevel > 100 and k == 2)) -- This check if we are using the correct table
+            -- This check if we already got a solo or group item, or if we got 0 and >0 in the bank from the last pass
+            and (((not solo and kk == 1) or (solo == 0 and kk == 1)) or ((not group and kk == 2) or (group == 0 and kk == 2))) ) then
+                local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(vv);
+
+                button = _G["BrokerSpecializationsTalentsFrameItemButton"..kk];
+                button:SetID(vv);
+                button.icon:SetTexture(itemTexture);
+                button.count:SetText(count);
+                button.countNum = count;
+                button.countBank = countBank;
+
+                -- Doing this to inform the player he got some in his bank
+                -- The display is handled by the xml
+                if ( count == 0 ) then
+                    button:SetAttribute("item", nil);
+                    button.icon:SetDesaturated(true);
+                else
+                    button:SetAttribute("item", itemName);
+                    button.icon:SetDesaturated(false);
+                end
+
+                if ( kk == 1 ) then
+                    solo = count;
+                else
+                    group = count;
+                end
+            end
+        end
+    end
+
+    -- Buttons visibility and anchors
+    if ( solo and group ) then
+        button1:ClearAllPoints();
+        button1:SetPoint("BOTTOM", BrokerSpecializationsTalentsFrameBottomCloseButton, "TOP", -21, 6);
+        button1:Show();
+
+        button2:ClearAllPoints();
+        button2:SetPoint("LEFT", button1, "RIGHT", 6, 0);
+        button2:Show();
+
+        switchItemsHeight = 42;
+    elseif ( solo ) then
+        button1:ClearAllPoints();
+        button1:SetPoint("BOTTOM", BrokerSpecializationsTalentsFrameBottomCloseButton, "TOP", 0, 6);
+        button1:Show();
+
+        button2:Hide();
+        button2:SetAttribute("item", nil);
+
+        switchItemsHeight = 42;
+    elseif ( group ) then
+        button1:Hide();
+        button1:SetAttribute("item", nil);
+
+        button2:ClearAllPoints();
+        button2:SetPoint("BOTTOM", BrokerSpecializationsTalentsFrameBottomCloseButton, "TOP", 0, 6);
+        button2:Show();
+
+        switchItemsHeight = 42;
+    else
+        button1:Hide();
+        button1:SetAttribute("item", nil);
+
+        button2:Hide();
+        button2:SetAttribute("item", nil);
+    end
+
+    -- Set frame size
+    -- Title height offset + close button height + his offset + offset = 28 + 22 + 4 + 6 = 60 - This is static
+    -- Now add talent button height + offset * tiers = 36 + 6 * x - This is variable
+    -- And if we got some switch items add the height of a button + offset = 36 + 6 = 42 - This is defined above
+    A.talentsFrame:SetHeight(60 + (42 * tiers) + switchItemsHeight);
+end
+
+function A:TalentButtonOnClick(button)
+    if ( A.inCombat ) then return; end
+
+    if ( LearnTalent(button:GetID()) ) then
+        A:TalentsFrameUpdate();
+    end
+end
+
+function A:ItemButtonPostClick(button)
+    A:TalentsFrameUpdate();
+end
+
+function A:SetTalentsSwitchBuffsNames()
+    if ( not A.talentsSwitchBuffsNames ) then
+        A.talentsSwitchBuffsNames = {};
+
+        for _,v in ipairs(A.talentsSwitchBuffs) do
+            local name = GetSpellInfo(v);
+
+            if ( name ) then
+                A.talentsSwitchBuffsNames[#A.talentsSwitchBuffsNames+1] = name;
+            else
+                A:ScheduleTimer("SetTalentsSwitchBuffsNames", 0.5);
+            end
+
+        end
+    end
+end
+
+function A:SetSwitchItemsTooltip(frame)
+    GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
+    GameTooltip:SetItemByID(frame:GetID());
+
+    -- If the player is resting, display a message on the tooltip
+    if ( IsResting() ) then
+        GameTooltip:AddLine(A.color["RED"]..L["You are resting."]);
+    end
+
+    -- Check if the player is already buffed
+    local index = UnitLevel("player") > 100 and 3 or 1; -- Start at index 3 if the player is above 100
+
+    for i=index,#A.talentsSwitchBuffsNames do
+        if ( UnitBuff("player", A.talentsSwitchBuffsNames[i]) ) then
+            GameTooltip:AddLine(A.color["RED"]..L["You are already buffed with %s."]:format(A.talentsSwitchBuffsNames[i]));
+            break;
+        end
+    end
+
+    -- Needed to update the tooltip height
+    GameTooltip:Show();
+end
+
+function A:TalentsFrameShowOrHide(relativeTo)
+    if ( A.talentsFrame:IsShown() ) then
+        A.talentsFrame:Hide();
+    else
+        if ( GetMaxTalentTier() == 0 ) then return; end
+
+        local point, relativePoint = A:SmartAnchor();
+        A.talentsFrame:ClearAllPoints();
+        A.talentsFrame:SetPoint(point, relativeTo, relativePoint, 0, 0);
+        CloseDropDownMenus();
+        A:HideTooltip();
+        A.talentsFrame:Show();
+    end
+end
+
+--[[-------------------------------------------------------------------------------
     Dropdown menu
 -------------------------------------------------------------------------------]]--
 
@@ -507,8 +788,22 @@ local function DropdownMenu(self, level)
         for k,v in ipairs(A.specDB) do
             info.text = v.name;
             info.icon = v.icon;
+            info.padding = 20;
             info.disabled = v.current;
             info.func = function() A:SetSpecialization(k); end;
+            UIDropDownMenu_AddButton(info, level);
+        end
+
+        -- Pet specializations (menu)
+        if ( A.playerClass == "HUNTER") then
+            info.text = L["Pet"];
+            info.value = "HUNTERPET";
+            -- Set options
+            info.isTitle = nil;
+            info.notClickable = nil;
+            info.icon = nil;
+            info.keepShownOnClick = 1;
+            info.hasArrow = 1;
             UIDropDownMenu_AddButton(info, level);
         end
 
@@ -517,6 +812,7 @@ local function DropdownMenu(self, level)
         info.isTitle = 1;
         info.notClickable = 1;
         info.iconOnly = 1;
+        info.hasArrow = nil;
         info.icon = "Interface\\Common\\UI-TooltipDivider-Transparent";
         info.iconInfo =
         {
@@ -546,13 +842,13 @@ local function DropdownMenu(self, level)
         info.keepShownOnClick = 1;
         info.hasArrow = 1;
 
-        -- Gear sets switch
+        -- Gear sets switch (menu)
         info.text = L["Gear set"];
         info.value = "GEARSET";
         info.disabled = GetNumEquipmentSets() == 0 and 1 or nil;
         UIDropDownMenu_AddButton(info, level);
 
-        -- Loot specialization switch
+        -- Loot specialization switch (menu)
         info.text = L["Loot specialization"];
         info.value = "LOOTSPEC";
         info.disabled = nil;
@@ -638,12 +934,131 @@ local function DropdownMenu(self, level)
             for _,v in ipairs(A.specDB) do
                 info.text = v.name;
                 info.icon = v.icon;
+                info.padding = 20;
                 info.disabled = currentLootSpec == v.id and 1 or nil;
                 info.func = function() SetLootSpecialization(v.id); end;
                 UIDropDownMenu_AddButton(info, level);
             end
+        elseif ( UIDROPDOWNMENU_MENU_VALUE == "HUNTERPET" ) then
+            for k,v in ipairs(A.petSpecDB) do
+                info.text = v.name;
+                info.icon = v.icon;
+                info.padding = 20;
+                info.disabled = v.current;
+                info.func = function() A:SetSpecialization(k, true); end;
+                UIDropDownMenu_AddButton(info, level);
+            end
         end
     end
+end
+
+--[[-------------------------------------------------------------------------------
+    Tooltips
+-------------------------------------------------------------------------------]]--
+
+function A:HideTooltip()
+    if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
+        local tooltip = A.tip:Acquire("BrokerSpecializationsTooltip");
+
+        tooltip:Release();
+        tooltip = nil;
+    end
+end
+
+function A:RefreshTooltip()
+    if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
+        local tooltip = A.tip:Acquire("BrokerSpecializationsTooltip");
+
+        tooltip:Release();
+        A:Tooltip(tooltip.anchorFrame);
+    end
+end
+
+function A:Tooltip(anchorFrame)
+    local tooltip = A.tip:Acquire("BrokerSpecializationsTooltip", 2, "LEFT", "LEFT");
+    local line;
+    tooltip.anchorFrame = anchorFrame;
+    anchorFrame.tooltip = tooltip;
+
+    tooltip:AddHeader(A.color["PRIEST"]..L["Broker Specializations"]);
+    tooltip:SetCell(1, 2, A.color["GREEN"].." v"..A.version, nil, "RIGHT");
+    tooltip:AddLine(" ");
+
+    if ( A.db.profile.switchTooltip ) then
+        line = tooltip:AddLine();
+        tooltip:SetCell(line, 1, A.color["GREEN"]..L["Specializations switch"], nil, nil, 2);
+
+        for k,v in ipairs(A.specDB) do
+            line = tooltip:AddLine();
+
+            if ( v.current ) then
+                tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["POOR"]..v.name, nil, nil, 2);
+            else
+                tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["PRIEST"]..v.name, nil, nil, 2);
+                tooltip:SetCellScript(line, 1, "OnMouseUp", function()
+                    A:SetSpecialization(k);
+                    A:HideTooltip();
+                end);
+            end
+        end
+
+        if ( A.playerClass == "HUNTER" ) then
+            tooltip:AddLine(" ");
+            line = tooltip:AddLine();
+            tooltip:SetCell(line, 1, A.color["GREEN"]..L["Pet specializations switch"], nil, nil, 2);
+
+            for k,v in ipairs(A.petSpecDB) do
+                line = tooltip:AddLine();
+
+                if ( v.current ) then
+                    tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["POOR"]..v.name, nil, nil, 2);
+                else
+                    tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["PRIEST"]..v.name, nil, nil, 2);
+                    tooltip:SetCellScript(line, 1, "OnMouseUp", function()
+                        A:SetSpecialization(k, true);
+                        A:HideTooltip();
+                    end);
+                end
+            end
+        end
+
+        tooltip:AddLine(" ");
+    end
+
+    if ( not A.db.profile.switchTooltip or (A.db.profile.tooltipInfos and A.db.profile.switchTooltip) ) then
+        local _, _, specName, specIcon = A:GetCurrentSpecInfos();
+        local _, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
+        local gearSet, gearIcon = A:GetCurrentGearSet();
+
+        line = tooltip:AddLine();
+        tooltip:SetCell(line, 1, A.color["GREEN"]..L["Informations"], nil, nil, 2);
+        tooltip:AddLine(L["Current specialization"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
+        tooltip:AddLine(L["Current equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
+        tooltip:AddLine(L["Current loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+        tooltip:AddLine(" ");
+
+        if ( A.db.profile.dualSpecEnabled ) then
+            specName, specIcon, gearSet, gearIcon, lootSpecText, lootSpecIcon = A:DualSpecSwitchToInfos();
+
+            line = tooltip:AddLine();
+            tooltip:SetCell(line, 1, A.color["GREEN"]..L["Dual specialization mode is enabled"], nil, nil, 2);
+            tooltip:AddLine(L["Switch to"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
+            tooltip:AddLine(L["With equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
+            tooltip:AddLine(L["And loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+            tooltip:AddLine(" ");
+        end
+    end
+
+    if ( A.db.profile.dualSpecEnabled ) then
+        line = tooltip:AddLine();
+        tooltip:SetCell(line, 1, L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
+    else
+        line = tooltip:AddLine();
+        tooltip:SetCell(line, 1, L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
+    end
+
+    tooltip:SmartAnchorTo(anchorFrame);
+    tooltip:Show();
 end
 
 --[[-------------------------------------------------------------------------------
@@ -668,6 +1083,9 @@ A.aceDefaultDB =
         dualSpecEnabled = nil,
         dualSpecOne = 1,
         dualSpecTwo = 2,
+        talentFrameEnabled = 1,
+        switchTooltip = nil,
+        tooltipInfos = 1,
     },
 };
 
@@ -748,10 +1166,21 @@ function A:PLAYER_SPECIALIZATION_CHANGED()
     A.currentSpec = GetSpecialization();
     A:SetSpecializationsDatabase();
     A:UpdateBroker();
+    A:RefreshTooltip();
+
+    if ( A.talentsFrame:IsShown() ) then
+        A:TalentsFrameUpdate();
+    end
 
     if ( oldSpec ~= A.currentSpec ) then
         A:SetGearAndLootAfterSwitch();
     end
+end
+
+function A:PET_SPECIALIZATION_CHANGED()
+    A.currentPetSpec = GetSpecialization(false, true);
+    A:SetPetSpecializationsDatabase();
+    A:RefreshTooltip();
 end
 
 function A:PLAYER_LOOT_SPEC_UPDATED()
@@ -764,6 +1193,10 @@ end
 
 function A:PLAYER_REGEN_DISABLED()
     A.inCombat = 1;
+
+    if ( A.talentsFrame:IsShown() ) then
+        A.talentsFrame:Hide();
+    end
 end
 
 function A:PLAYER_REGEN_ENABLED()
@@ -783,6 +1216,12 @@ function A:PLAYER_LEVEL_UP(event, level)
     end
 end
 
+function A:BAG_UPDATE()
+    if ( A.talentsFrame:IsShown() ) then
+        A:TalentsFrameUpdate();
+    end
+end
+
 --[[-------------------------------------------------------------------------------
     Ace3 Init
 -------------------------------------------------------------------------------]]--
@@ -791,6 +1230,7 @@ end
 -- Called after the addon is fully loaded
 function A:OnInitialize()
     A.db = LibStub("AceDB-3.0"):New("brokerSpecializationsDB", A.aceDefaultDB);
+    A.talentsFrame = BrokerSpecializationsTalentsFrame;
 
     if ( UnitLevel("player") < 10 ) then
         A:SetEnabledState(false);
@@ -825,9 +1265,14 @@ function A:OnEnable()
         tocname = "Broker_Specializations",
         OnClick = function(self, button)
             if (button == "LeftButton") then
-                --ShenDump(A.gearSetsDB)
                 if ( A.db.profile.dualSpecEnabled ) then
-                    A:DualSwitch();
+                    if ( IsShiftKeyDown() and A.db.profile.talentFrameEnabled ) then
+                        A:TalentsFrameShowOrHide(self);
+                    else
+                        A:DualSwitch();
+                    end
+                elseif ( A.db.profile.talentFrameEnabled ) then
+                    A:TalentsFrameShowOrHide(self);
                 end
             elseif ( button == "RightButton" ) then
                 if ( A.menuFrame.initialize ~= DropdownMenu ) then
@@ -835,39 +1280,21 @@ function A:OnEnable()
                     A.menuFrame.initialize = DropdownMenu;
                 end
                 ToggleDropDownMenu(1, nil, A.menuFrame, self, 0, 0);
-                GameTooltip:Hide();
+                A:HideTooltip();
             elseif ( button == "MiddleButton" ) then
                 A:OpenConfigPanel();
             end
         end,
-        OnTooltipShow = function(tooltip)
-            tooltip:AddDoubleLine(A.color["PRIEST"]..L["Broker Specializations"], A.color["GREEN"].." v"..A.version);
-            tooltip:AddLine(" ");
+        OnEnter = function(self)
+            if ( A.talentsFrame:IsShown() ) then return; end
 
-            local _, _, specName, specIcon = A:GetCurrentSpecInfos();
-            local _, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
-            local gearSet, gearIcon = A:GetCurrentGearSet();
+            A:Tooltip(self);
+        end,
+        OnLeave = function(self)
+            if ( A.db.profile.switchTooltip ) then return; end
 
-            tooltip:AddLine(L["Current specialization: %s"]:format("|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName));
-            tooltip:AddLine(L["Current equipment set: %s"]:format("|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet));
-            tooltip:AddLine(L["Current loot specialization: %s"]:format("|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText));
-            tooltip:AddLine(" ");
-
-            if ( A.db.profile.dualSpecEnabled ) then
-                specName, specIcon, gearSet, gearIcon, lootSpecText, lootSpecIcon = A:DualSpecSwitchToInfos();
-
-                tooltip:AddLine(A.color["PRIEST"]..L["Dual specialization mode is enabled"]);
-                tooltip:AddLine(L["Switch to: %s"]:format("|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName));
-                tooltip:AddLine(L["With equipment set: %s"]:format("|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet));
-                tooltip:AddLine(L["And loot specialization: %s"]:format("|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText));
-                tooltip:AddLine(" ");
-            end
-
-            if ( A.db.profile.dualSpecEnabled ) then
-                tooltip:AddLine(L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."]);
-            else
-                tooltip:AddLine(L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."]);
-            end
+            A.tip:Release(self.tooltip);
+            self.tooltip = nil;
         end,
     });
 
@@ -883,6 +1310,8 @@ function A:OnEnable()
     A:RegisterEvent("EQUIPMENT_SETS_CHANGED");
     A:RegisterEvent("PLAYER_REGEN_DISABLED");
     A:RegisterEvent("PLAYER_REGEN_ENABLED");
+    A:RegisterEvent("BAG_UPDATE");
+    A:RegisterEvent("PET_SPECIALIZATION_CHANGED");
 
     -- Add the config loader to blizzard addon configuration panel
     A:AddToBlizzTemp();

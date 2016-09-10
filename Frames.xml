@@ -1,0 +1,393 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+    <!-- Buttons frames templates -->
+    <Button name="BrokerSpecializationsButtonTemplate" virtual="true">
+        <Size x="36" y="36"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentIcon" parentKey="icon" file="Interface\ICONS\INV_Misc_QuestionMark"/>
+            </Layer>
+            <Layer level="OVERLAY">
+                <Texture name="$parentBorder" file="Interface\Buttons\UI-ActionButton-Border" hidden="true" alphaMode="ADD">
+                    <Size x="62" y="62"/>
+                    <Anchors>
+                        <Anchor point="CENTER" x="0" y="0"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <!--<Layer level="ARTWORK" textureSubLevel="2">
+                <FontString name="$parentHotKey" inherits="NumberFontNormalSmallGray" justifyH="RIGHT">
+                    <Size x="36" y="10"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="1" y="-3"/>
+                    </Anchors>
+                </FontString>
+            </Layer>-->
+        </Layers>
+        <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+            <Anchors>
+                <Anchor point="TOPLEFT" x="-15" y="15"/>
+                <Anchor point="BOTTOMRIGHT" x="15" y="-15"/>
+            </Anchors>
+        </NormalTexture>
+        <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+        <HighlightTexture alphaMode="ADD" file="Interface\Buttons\ButtonHilight-Square"/>
+        <Scripts>
+            <OnLoad>
+                --self:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp");
+                self:RegisterForClicks("LeftButtonUp");
+                self:RegisterForDrag("LeftButton");
+            </OnLoad>
+            <OnClick>
+                BrokerSpecializationsGlobal:TalentButtonOnClick(self);
+            </OnClick>
+            <OnEnter>
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+                GameTooltip:SetTalent(self:GetID(), false, self.talentGroup);
+            </OnEnter>
+            <OnLeave>
+                GameTooltip:Hide();
+            </OnLeave>
+            <OnUpdate>
+                if ( GameTooltip:GetOwner() == self ) then
+                    GameTooltip:SetTalent(self:GetID(), false, self.talentGroup);
+                end
+            </OnUpdate>
+            <OnDragStart>
+                PickupTalent(self:GetID());
+            </OnDragStart>
+            <OnReceiveDrag>
+                PickupTalent(self:GetID());
+            </OnReceiveDrag>
+        </Scripts>
+    </Button>
+
+    <Button name="BrokerSpecializationsSecureButtonTemplate" inherits="SecureActionButtonTemplate" virtual="true">
+        <Size x="36" y="36"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentIcon" parentKey="icon" file="Interface\ICONS\INV_Misc_QuestionMark"/>
+            </Layer>
+            <Layer level="OVERLAY">
+                <Texture name="$parentBorder" file="Interface\Buttons\UI-ActionButton-Border" hidden="true" alphaMode="ADD">
+                    <Size x="62" y="62"/>
+                    <Anchors>
+                        <Anchor point="CENTER" x="0" y="0"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK" textureSubLevel="2">
+                <FontString name="$parentCount" parentKey="count" inherits="NumberFontNormalSmallGray" justifyH="RIGHT">
+                    <Size x="36" y="10"/>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" x="1" y="-3"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+            <Anchors>
+                <Anchor point="TOPLEFT" x="-15" y="15"/>
+                <Anchor point="BOTTOMRIGHT" x="15" y="-15"/>
+            </Anchors>
+        </NormalTexture>
+        <PushedTexture file="Interface\Buttons\UI-Quickslot-Depress"/>
+        <HighlightTexture alphaMode="ADD" file="Interface\Buttons\ButtonHilight-Square"/>
+        <Scripts>
+            <OnLoad>
+                --self:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp");
+                self:RegisterForClicks("LeftButtonUp");
+                self:RegisterForDrag("LeftButton");
+                self:SetAttribute("type", "item");
+            </OnLoad>
+            <PostClick>
+                BrokerSpecializationsGlobal:ItemButtonPostClick(self);
+            </PostClick>
+            <OnEnter>
+                BrokerSpecializationsGlobal:SetSwitchItemsTooltip(self);
+            </OnEnter>
+            <OnLeave>
+                GameTooltip:Hide();
+            </OnLeave>
+            <OnUpdate>
+                if ( GameTooltip:GetOwner() == self ) then
+                    BrokerSpecializationsGlobal:SetSwitchItemsTooltip(self);
+                end
+            </OnUpdate>
+            <OnDragStart>
+                PickupItem(self:GetID());
+            </OnDragStart>
+            <OnReceiveDrag>
+                PickupItem(self:GetID());
+            </OnReceiveDrag>
+        </Scripts>
+    </Button>
+
+    <Frame name="BrokerSpecializationsTalentsFrame" parent="UIParent" framestrata="DIALOG" hidden="true" inherits="ButtonFrameTemplate">
+        <Size x="144" y="0"/>
+        <Anchors>
+            <Anchor point="CENTER" relativeTo="$parent">
+                <Offset>
+                    <AbsDimension x="0" y="0"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <!--<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+            <EdgeSize>
+                <AbsValue val="12"/>
+            </EdgeSize>
+            <TileSize>
+                <AbsValue val="12"/>
+            </TileSize>
+            <BackgroundInsets>
+                <AbsInset left="4" right="4" top="4" bottom="4"/>
+            </BackgroundInsets>
+        </Backdrop>-->
+        <Frames>
+            <!-- Row 1 -->
+            <Button name="$parentTalentButtonRow1Col2" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
+                        <Offset>
+                            <AbsDimension x="0" y="-28"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow1Col1" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTalentButtonRow1Col2" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow1Col3" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentTalentButtonRow1Col2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Row 2 -->
+            <Button name="$parentTalentButtonRow2Col2" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parentTalentButtonRow1Col2" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="-6"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow2Col1" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTalentButtonRow2Col2" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow2Col3" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentTalentButtonRow2Col2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Row 3 -->
+            <Button name="$parentTalentButtonRow3Col2" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parentTalentButtonRow2Col2" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="-6"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow3Col1" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTalentButtonRow3Col2" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow3Col3" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentTalentButtonRow3Col2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Row 4 -->
+            <Button name="$parentTalentButtonRow4Col2" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parentTalentButtonRow3Col2" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="-6"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow4Col1" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTalentButtonRow4Col2" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow4Col3" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentTalentButtonRow4Col2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Row 5 -->
+            <Button name="$parentTalentButtonRow5Col2" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parentTalentButtonRow4Col2" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="-6"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow5Col1" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTalentButtonRow5Col2" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow5Col3" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentTalentButtonRow5Col2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Row 6 -->
+            <Button name="$parentTalentButtonRow6Col2" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parentTalentButtonRow5Col2" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="-6"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow6Col1" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTalentButtonRow6Col2" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow6Col3" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentTalentButtonRow6Col2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Row 7 -->
+            <Button name="$parentTalentButtonRow7Col2" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="$parentTalentButtonRow6Col2" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="-6"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow7Col1" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentTalentButtonRow7Col2" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentTalentButtonRow7Col3" inherits="BrokerSpecializationsButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentTalentButtonRow7Col2" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Close -->
+            <Button name="$parentBottomCloseButton" parentKey="closeButton" inherits="UIPanelButtonTemplate">
+                <Size>
+                    <AbsDimension x="90" y="22"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="BOTTOM" relativeTo="$parent" relativePoint="BOTTOM">
+                        <Offset>
+                            <AbsDimension x="0" y="4"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        self:GetParent():Hide();
+                        PlaySound("igCharacterInfoClose");
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <!-- Item button 1 -->
+            <Button name="$parentItemButton1" inherits="BrokerSpecializationsSecureButtonTemplate">
+                <Anchors>
+                    <Anchor point="BOTTOM" relativeTo="$parentBottomCloseButton" relativePoint="TOP">
+                        <Offset>
+                            <AbsDimension x="-21" y="6"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Item button 2 -->
+            <Button name="$parentItemButton2" inherits="BrokerSpecializationsSecureButtonTemplate">
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentItemButton1" relativePoint="RIGHT">
+                        <Offset>
+                            <AbsDimension x="6" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                BrokerSpecializationsGlobal:TalentsFrameOnLoad(self);
+            </OnLoad>
+            <OnShow>
+                BrokerSpecializationsGlobal:TalentsFrameOnShow(self);
+            </OnShow>
+        </Scripts>
+    </Frame>
+</Ui>
+

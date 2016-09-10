@@ -139,6 +139,35 @@ function A:ConfigurationPanel()
                             },
                         },
                     },
+                    tooltip =
+                    {
+                        order = 60,
+                        name = L["Tooltip"],
+                        type = "group",
+                        inline = true,
+                        args =
+                        {
+                            switchTootip =
+                            {
+                                order = 0,
+                                name = L["Switch with tooltip"],
+                                desc = L["Enable this to use the tooltip to switch between your specializations."],
+                                --width = "full",
+                                type = "toggle",
+                                set = function() A.db.profile.switchTooltip = not A.db.profile.switchTooltip; end,
+                                get = function() return A.db.profile.switchTooltip; end,
+                            },
+                            informations =
+                            {
+                                order = 1,
+                                name = L["Informations"],
+                                desc = L["Add some informations to the tooltip."],
+                                type = "toggle",
+                                set = function() A.db.profile.tooltipInfos = not A.db.profile.tooltipInfos; end,
+                                get = function() return A.db.profile.tooltipInfos; end,
+                            },
+                        },
+                    },
                     dataBroker =
                     {
                         order = 100,
