@@ -767,64 +767,66 @@ local function DropdownMenu(self, level)
     local info = self.info;
 
     if ( level == 1 ) then
-        -- Specializations switch (title)
-        info.isTitle = 1;
-        info.text = L["Specializations switch"];
-        info.notCheckable = 1;
-        info.icon = nil;
-        info.disabled = nil;
-        UIDropDownMenu_AddButton(info, level);
-
-        -- Set options
-        info.keepShownOnClick = nil;
-        info.hasArrow = nil;
-        info.isTitle = nil;
-        info.iconOnly = nil;
-        info.iconInfo = nil;
-        info.notClickable = nil;
-        info.notCheckable = 1;
-
-        -- Specializations list (switch)
-        for k,v in ipairs(A.specDB) do
-            info.text = v.name;
-            info.icon = v.icon;
-            info.padding = 20;
-            info.disabled = v.current;
-            info.func = function() A:SetSpecialization(k); end;
-            UIDropDownMenu_AddButton(info, level);
-        end
-
-        -- Pet specializations (menu)
-        if ( A.playerClass == "HUNTER") then
-            info.text = L["Pet"];
-            info.value = "HUNTERPET";
-            -- Set options
-            info.isTitle = nil;
-            info.notClickable = nil;
+        if ( not A.db.profile.switchTooltip ) then
+            -- Specializations switch (title)
+            info.isTitle = 1;
+            info.text = L["Specializations switch"];
+            info.notCheckable = 1;
             info.icon = nil;
-            info.keepShownOnClick = 1;
-            info.hasArrow = 1;
+            info.disabled = nil;
+            UIDropDownMenu_AddButton(info, level);
+
+            -- Set options
+            info.keepShownOnClick = nil;
+            info.hasArrow = nil;
+            info.isTitle = nil;
+            info.iconOnly = nil;
+            info.iconInfo = nil;
+            info.notClickable = nil;
+            info.notCheckable = 1;
+
+            -- Specializations list (switch)
+            for k,v in ipairs(A.specDB) do
+                info.text = v.name;
+                info.icon = v.icon;
+                info.padding = 20;
+                info.disabled = v.current;
+                info.func = function() A:SetSpecialization(k); end;
+                UIDropDownMenu_AddButton(info, level);
+            end
+
+            -- Pet specializations (menu)
+            if ( A.playerClass == "HUNTER") then
+                info.text = L["Pet"];
+                info.value = "HUNTERPET";
+                -- Set options
+                info.isTitle = nil;
+                info.notClickable = nil;
+                info.icon = nil;
+                info.keepShownOnClick = 1;
+                info.hasArrow = 1;
+                UIDropDownMenu_AddButton(info, level);
+            end
+
+            -- Separator
+            info.text = "";
+            info.isTitle = 1;
+            info.notClickable = 1;
+            info.iconOnly = 1;
+            info.hasArrow = nil;
+            info.icon = "Interface\\Common\\UI-TooltipDivider-Transparent";
+            info.iconInfo =
+            {
+                tCoordLeft = 0,
+                tCoordRight = 1,
+                tCoordTop = 0,
+                tCoordBottom = 1,
+                tSizeX = 0,
+                tSizeY = 8,
+                tFitDropDownSizeX = 1,
+            };
             UIDropDownMenu_AddButton(info, level);
         end
-
-        -- Separator
-        info.text = "";
-        info.isTitle = 1;
-        info.notClickable = 1;
-        info.iconOnly = 1;
-        info.hasArrow = nil;
-        info.icon = "Interface\\Common\\UI-TooltipDivider-Transparent";
-        info.iconInfo =
-        {
-            tCoordLeft = 0,
-            tCoordRight = 1,
-            tCoordTop = 0,
-            tCoordBottom = 1,
-            tSizeX = 0,
-            tSizeY = 8,
-            tFitDropDownSizeX = 1,
-        };
-        UIDropDownMenu_AddButton(info, level);
 
         -- Other switches (title)
         info.text = L["Other switches"];
@@ -845,7 +847,7 @@ local function DropdownMenu(self, level)
         -- Gear sets switch (menu)
         info.text = L["Gear set"];
         info.value = "GEARSET";
-        info.disabled = GetNumEquipmentSets() == 0 and 1 or nil;
+        info.disabled = #A.gearSetsDB == 0 and 1 or nil;
         UIDropDownMenu_AddButton(info, level);
 
         -- Loot specialization switch (menu)
@@ -970,32 +972,32 @@ function A:RefreshTooltip()
         local tooltip = A.tip:Acquire("BrokerSpecializationsTooltip");
 
         tooltip:Release();
-        A:Tooltip(tooltip.anchorFrame);
+        A:Tooltip(tooltip.brokerSpecializationsAnchorFrame);
     end
 end
 
 function A:Tooltip(anchorFrame)
-    local tooltip = A.tip:Acquire("BrokerSpecializationsTooltip", 2, "LEFT", "LEFT");
+    local tip = A.tip:Acquire("BrokerSpecializationsTooltip", 2, "LEFT", "LEFT");
     local line;
-    tooltip.anchorFrame = anchorFrame;
-    anchorFrame.tooltip = tooltip;
+    tip.brokerSpecializationsAnchorFrame = anchorFrame;
+    anchorFrame.brokerSpecializationsTooltip = tip;
 
-    tooltip:AddHeader(A.color["PRIEST"]..L["Broker Specializations"]);
-    tooltip:SetCell(1, 2, A.color["GREEN"].." v"..A.version, nil, "RIGHT");
-    tooltip:AddLine(" ");
+    tip:AddHeader(A.color["PRIEST"]..L["Broker Specializations"]);
+    tip:SetCell(1, 2, A.color["GREEN"].." v"..A.version, nil, "RIGHT");
+    tip:AddLine(" ");
 
     if ( A.db.profile.switchTooltip ) then
-        line = tooltip:AddLine();
-        tooltip:SetCell(line, 1, A.color["GREEN"]..L["Specializations switch"], nil, nil, 2);
+        line = tip:AddLine();
+        tip:SetCell(line, 1, A.color["GREEN"]..L["Specializations switch"], nil, nil, 2);
 
         for k,v in ipairs(A.specDB) do
-            line = tooltip:AddLine();
+            line = tip:AddLine();
 
             if ( v.current ) then
-                tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["POOR"]..v.name, nil, nil, 2);
+                tip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["POOR"]..v.name, nil, nil, 2);
             else
-                tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["PRIEST"]..v.name, nil, nil, 2);
-                tooltip:SetCellScript(line, 1, "OnMouseUp", function()
+                tip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["PRIEST"]..v.name, nil, nil, 2);
+                tip:SetCellScript(line, 1, "OnMouseUp", function()
                     A:SetSpecialization(k);
                     A:HideTooltip();
                 end);
@@ -1003,18 +1005,18 @@ function A:Tooltip(anchorFrame)
         end
 
         if ( A.playerClass == "HUNTER" ) then
-            tooltip:AddLine(" ");
-            line = tooltip:AddLine();
-            tooltip:SetCell(line, 1, A.color["GREEN"]..L["Pet specializations switch"], nil, nil, 2);
+            tip:AddLine(" ");
+            line = tip:AddLine();
+            tip:SetCell(line, 1, A.color["GREEN"]..L["Pet specializations switch"], nil, nil, 2);
 
             for k,v in ipairs(A.petSpecDB) do
-                line = tooltip:AddLine();
+                line = tip:AddLine();
 
                 if ( v.current ) then
-                    tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["POOR"]..v.name, nil, nil, 2);
+                    tip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["POOR"]..v.name, nil, nil, 2);
                 else
-                    tooltip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["PRIEST"]..v.name, nil, nil, 2);
-                    tooltip:SetCellScript(line, 1, "OnMouseUp", function()
+                    tip:SetCell(line, 1, "|T"..v.icon..":16:16:0:0|t"..A.color["PRIEST"]..v.name, nil, nil, 2);
+                    tip:SetCellScript(line, 1, "OnMouseUp", function()
                         A:SetSpecialization(k, true);
                         A:HideTooltip();
                     end);
@@ -1022,7 +1024,7 @@ function A:Tooltip(anchorFrame)
             end
         end
 
-        tooltip:AddLine(" ");
+        tip:AddLine(" ");
     end
 
     if ( not A.db.profile.switchTooltip or (A.db.profile.tooltipInfos and A.db.profile.switchTooltip) ) then
@@ -1030,35 +1032,35 @@ function A:Tooltip(anchorFrame)
         local _, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
         local gearSet, gearIcon = A:GetCurrentGearSet();
 
-        line = tooltip:AddLine();
-        tooltip:SetCell(line, 1, A.color["GREEN"]..L["Informations"], nil, nil, 2);
-        tooltip:AddLine(L["Current specialization"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
-        tooltip:AddLine(L["Current equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
-        tooltip:AddLine(L["Current loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
-        tooltip:AddLine(" ");
+        line = tip:AddLine();
+        tip:SetCell(line, 1, A.color["GREEN"]..L["Informations"], nil, nil, 2);
+        tip:AddLine(L["Current specialization"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
+        tip:AddLine(L["Current equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
+        tip:AddLine(L["Current loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+        tip:AddLine(" ");
 
         if ( A.db.profile.dualSpecEnabled ) then
             specName, specIcon, gearSet, gearIcon, lootSpecText, lootSpecIcon = A:DualSpecSwitchToInfos();
 
-            line = tooltip:AddLine();
-            tooltip:SetCell(line, 1, A.color["GREEN"]..L["Dual specialization mode is enabled"], nil, nil, 2);
-            tooltip:AddLine(L["Switch to"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
-            tooltip:AddLine(L["With equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
-            tooltip:AddLine(L["And loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
-            tooltip:AddLine(" ");
+            line = tip:AddLine();
+            tip:SetCell(line, 1, A.color["GREEN"]..L["Dual specialization mode is enabled"], nil, nil, 2);
+            tip:AddLine(L["Switch to"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
+            tip:AddLine(L["With equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
+            tip:AddLine(L["And loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+            tip:AddLine(" ");
         end
     end
 
     if ( A.db.profile.dualSpecEnabled ) then
-        line = tooltip:AddLine();
-        tooltip:SetCell(line, 1, L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
+        line = tip:AddLine();
+        tip:SetCell(line, 1, L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
     else
-        line = tooltip:AddLine();
-        tooltip:SetCell(line, 1, L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
+        line = tip:AddLine();
+        tip:SetCell(line, 1, L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
     end
 
-    tooltip:SmartAnchorTo(anchorFrame);
-    tooltip:Show();
+    tip:SmartAnchorTo(anchorFrame);
+    tip:Show();
 end
 
 --[[-------------------------------------------------------------------------------
@@ -1293,8 +1295,8 @@ function A:OnEnable()
         OnLeave = function(self)
             if ( A.db.profile.switchTooltip ) then return; end
 
-            A.tip:Release(self.tooltip);
-            self.tooltip = nil;
+            A.tip:Release(self.brokerSpecializationsTooltip);
+            self.brokerSpecializationsTooltip = nil;
         end,
     });
 
