@@ -152,7 +152,6 @@ function A:ConfigurationPanel()
                                 order = 0,
                                 name = L["Switch with tooltip"],
                                 desc = L["Enable this to use the tooltip to switch between your specializations."],
-                                --width = "full",
                                 type = "toggle",
                                 set = function() A.db.profile.switchTooltip = not A.db.profile.switchTooltip; end,
                                 get = function() return A.db.profile.switchTooltip; end,
@@ -217,28 +216,40 @@ function A:ConfigurationPanel()
                                 type = "select",
                                 values = A.showLootSpecModes,
                                 set = function(info, val)
-                                    if ( val == "text" ) then
-                                        A.db.profile.showLootSpecTextMode = 1;
-                                    else
-                                        A.db.profile.showLootSpecTextMode = nil;
-                                    end
-
+                                    A.db.profile.showLootSpecTextMode = val;
                                     A:UpdateBroker();
                                 end,
-                                get = function() return A.db.profile.showLootSpecTextMode and "text" or "icon"; end,
+                                get = function() return A.db.profile.showLootSpecTextMode; end,
                             },
                             showLootSpecBagIcon =
                             {
                                 order = 12,
                                 name = L["Display loot bag"],
                                 desc = L["When loot specialization display mode is text, display a bag icon before it."],
-                                disabled = not A.db.profile.showLootSpec or not A.db.profile.showLootSpecTextMode and 1 or nil,
+                                disabled = not A.db.profile.showLootSpec or A.db.profile.showLootSpecTextMode == "icon" and true or false,
                                 type = "toggle",
                                 set = function()
                                     A.db.profile.showLootSpecBagIcon = not A.db.profile.showLootSpecBagIcon;
                                     A:UpdateBroker();
                                 end,
                                 get = function() return A.db.profile.showLootSpecBagIcon; end,
+                            },
+                            lootSpecIconSize =
+                            {
+                                order = 13,
+                                name = L["Loot specialization icon size"],
+                                desc = L["Set the loot specialization icon size on the Data Broker display."],
+                                disabled = not A.db.profile.showLootSpec,
+                                type = "range",
+                                min = 4,
+                                max = 32,
+                                step = 1,
+                                width = "full",
+                                set = function(info, val)
+                                    A.db.profile.lootSpecIconSize = val;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.lootSpecIconSize; end,
                             },
                         },
                     },

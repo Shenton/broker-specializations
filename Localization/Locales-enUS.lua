@@ -90,6 +90,8 @@ L["Switch with tooltip"] = true;
 L["Enable this to use the tooltip to switch between your specializations."] = true;
 L["Informations"] = true;
 L["Add some informations to the tooltip."] = true;
+L["Loot specialization icon size"] = true;
+L["Set the loot specialization icon size on the Data Broker display."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;

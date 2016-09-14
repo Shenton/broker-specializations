@@ -92,7 +92,7 @@ A.color =
 };
 
 A.questionMark = "Interface\\ICONS\\INV_Misc_QuestionMark";
-A.lootBagIcon = "|TInterface\\ICONS\\INV_Misc_Bag_10_Green:16:16:0:0|t";
+A.lootBagIcon = "Interface\\ICONS\\INV_Misc_Bag_10_Green";
 
 A.showLootSpecModes =
 {
@@ -523,10 +523,10 @@ function A:GetDataBrokerText(name)
             text = text.." ";
         end
 
-        if ( A.db.profile.showLootSpecTextMode ) then
-            text = text.."("..(A.db.profile.showLootSpecBagIcon and A.lootBagIcon.." " or "")..specName..")";
+        if ( A.db.profile.showLootSpecTextMode == "text" ) then
+            text = text.."("..(A.db.profile.showLootSpecBagIcon and "|T"..A.lootBagIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t " or "")..specName..")";
         else
-            text = text.."(|T"..textIcon..":16:16:0:0|t)";
+            text = text.."(|T"..textIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t)";
         end
     end
 
@@ -960,19 +960,19 @@ end
 
 function A:HideTooltip()
     if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
-        local tooltip = A.tip:Acquire("BrokerSpecializationsTooltip");
+        local tip = A.tip:Acquire("BrokerSpecializationsTooltip");
 
-        tooltip:Release();
-        tooltip = nil;
+        tip:Release();
+        tip = nil;
     end
 end
 
 function A:RefreshTooltip()
     if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
-        local tooltip = A.tip:Acquire("BrokerSpecializationsTooltip");
+        local tip = A.tip:Acquire("BrokerSpecializationsTooltip");
 
-        tooltip:Release();
-        A:Tooltip(tooltip.brokerSpecializationsAnchorFrame);
+        tip:Release();
+        A:Tooltip(tip.brokerSpecializationsAnchorFrame);
     end
 end
 
@@ -1073,8 +1073,9 @@ A.aceDefaultDB =
     {
         showSpecName = 1,
         showLootSpec = 1,
-        showLootSpecTextMode = 1,
+        showLootSpecTextMode = "text",
         showLootSpecBagIcon = 1,
+        lootSpecIconSize = 16,
         minimap =
         {
             hide = false
