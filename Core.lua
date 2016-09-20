@@ -219,6 +219,7 @@ end
 --- Called on load, or when switching profile
 function A:SetEverything()
     A.playerClass = select(2, UnitClass("player"));
+    A.playerFaction = UnitFactionGroup("player");
 
     A.currentSpec = GetSpecialization();
     A:SetSpecializationsDatabase();
@@ -233,6 +234,7 @@ function A:SetEverything()
     A:SetGearSetsDatabase();
     A:UpdateBroker();
     A:SetTalentsSwitchBuffsNames();
+    A:CacheTalentsSwitchItems();
 end
 
 --[[-------------------------------------------------------------------------------
@@ -546,16 +548,145 @@ end
 -------------------------------------------------------------------------------]]--
 
 function A:TalentsFrameOnLoad(self)
-    --self:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b);
-    --self:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b);
     ButtonFrameTemplate_HidePortrait(self);
-    self.TitleText:SetText(L["Talents"]);
+    self.TitleText:ClearAllPoints();
+    self.TitleText:SetPoint("TOP", self, "TOP", -12, -4);
     self.closeButton:SetText(L["Close"]);
 end
 
 function A:TalentsFrameOnShow(self)
     PlaySound("igCharacterInfoOpen");
+
+    -- Set the pvp icon
+    if ( A.playerFaction == "Alliance" ) then
+        self.PvpTab.Icon:SetTexture("Interface\\ICONS\\Achievement_Garrison_Monument_Alliance_PVP");
+    elseif ( A.playerFaction == "Horde" ) then
+        self.PvpTab.Icon:SetTexture("Interface\\ICONS\\Achievement_Garrison_Monument_Horde_PVP");
+    else -- Pandaren < 10
+        self.PvpTab.Icon:SetTexture("Interface\\ICONS\\Achievement_Character_Pandaren_Female");
+    end
+
     A:TalentsFrameUpdate();
+end
+
+function A:TalentsFrameOnHide(self)
+    PlaySound("igCharacterInfoClose");
+
+    for i=1,7 do
+        for j=1,3 do
+            local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
+            A:HideOverlay(button);
+        end
+    end
+end
+
+function A:TalentsTabOnClick(self)
+    if ( A.talentsFrame.currentTab == "talents" ) then return; end
+
+    PlaySound("igMainMenuOptionCheckBoxOff");
+    A.talentsFrame.currentTab = "talents";
+    A:TalentsFrameUpdate();
+end
+
+function A:PvpTabOnClick(self)
+    if ( A.talentsFrame.currentTab == "pvp" ) then return; end
+
+    PlaySound("igMainMenuOptionCheckBoxOff");
+    A.talentsFrame.currentTab = "pvp";
+    A:TalentsFrameUpdate();
+end
+
+function A:SetTalentsFrameForTalents()
+    -- Title
+    A.talentsFrame.TitleText:SetText(L["Talents"]);
+
+    -- Tabs
+    A.talentsFrame.TalentsTab.Hider:Hide();
+    A.talentsFrame.TalentsTab.Highlight:Hide();
+    A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
+    A.talentsFrame.PvpTab.Hider:Show();
+    A.talentsFrame.PvpTab.Highlight:Show();
+    A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
+
+    -- Show last row
+    for i=1,3 do
+        A.talentsFrame["row7col"..i]:Show();
+    end
+
+    -- Anchor items buttons
+    A.talentsFrame.ItemButton1:SetPoint("TOP", A.talentsFrame.row7col2, "BOTTOM", -21, -6);
+
+    -- Set Frame height
+    A.talentsFrame:SetHeight(430);
+end
+
+function A:SetTalentsFrameForPvp()
+    -- Title
+    A.talentsFrame.TitleText:SetText(L["PvP"]);
+
+    -- Tabs
+    A.talentsFrame.PvpTab.Hider:Hide();
+    A.talentsFrame.PvpTab.Highlight:Hide();
+    A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
+    A.talentsFrame.TalentsTab.Hider:Show();
+    A.talentsFrame.TalentsTab.Highlight:Show();
+    A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
+
+    -- Hide last row
+    for i=1,3 do
+        A.talentsFrame["row7col"..i]:Hide();
+    end
+
+    -- Anchor items buttons
+    A.talentsFrame.ItemButton1:SetPoint("TOP", A.talentsFrame.row6col2, "BOTTOM", -21, -6);
+
+    -- Set Frame height
+    A.talentsFrame:SetHeight(388);
+end
+
+local glowOverlays = {};
+local numOverlays = 0;
+function A:GetOverlay()
+    local overlay = tremove(glowOverlays);
+
+    if ( not overlay ) then
+        numOverlays = numOverlays + 1;
+        overlay = CreateFrame("Frame", "BrokerSpecializationsTalentsFrameTalentButtonOverlay"..numOverlays, UIParent, "ActionBarButtonSpellActivationAlert");
+    end
+
+    return overlay;
+end
+
+function A:ShowOverlay(button)
+    if ( button.overlay ) then return; end
+
+    local frameWidth, frameHeight = button:GetSize();
+
+    button.overlay = A:GetOverlay();
+    button.overlay:SetParent(button);
+    button.overlay:ClearAllPoints();
+    button.overlay:SetSize(frameWidth * 1.4, frameHeight * 1.4);
+    button.overlay:SetPoint("TOPLEFT", button, "TOPLEFT", -frameWidth * 0.2, frameHeight * 0.2);
+    button.overlay:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", frameWidth * 0.2, -frameHeight * 0.2);
+    button.overlay.animIn:Play();
+end
+
+function A:HideOverlay(button)
+    if ( button.overlay ) then
+        local overlay = button.overlay.animOut:GetParent();
+
+        if ( button.overlay.animIn:IsPlaying() ) then
+            button.overlay.animIn:Stop();
+        end
+
+        if ( button.overlay:IsVisible() ) then
+            button.overlay.animOut:Play();
+        end
+
+        button.overlay:Hide();
+        tinsert(glowOverlays, overlay);
+        button.overlay = nil;
+    end
 end
 
 function A:TalentsFrameUpdate()
@@ -563,39 +694,63 @@ function A:TalentsFrameUpdate()
     local tiers = GetMaxTalentTier();
 
     -- Talents
-    for i=1,7 do
-        if ( i <= tiers ) then -- Player got the level for this tier, setting and showing buttons
+    if ( A.talentsFrame.currentTab == "talents" ) then
+        A:SetTalentsFrameForTalents();
+
+        for i=1,7 do
             local _, selectedTalent = GetTalentTierInfo(i, talentGroup, false);
 
             for j=1,3 do
                 local talentID, name, texture, selected, available = GetTalentInfo(i, j, talentGroup, false);
                 local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
 
-                button.talentGroup = talentGroupG;
+                button.talentGroup = talentGroup;
                 button:SetID(talentID);
                 SetItemButtonTexture(button, texture);
 
-                if ( selectedTalent == 0 ) then
+                if ( i <= tiers ) then
                     button.icon:SetDesaturated(false);
                 else
-                    if ( selected ) then
-                        button.icon:SetDesaturated(false);
-                    else
-                        button.icon:SetDesaturated(true);
-                    end
+                    button.icon:SetDesaturated(true);
                 end
 
-                button:Show();
+                if ( selected ) then
+                    A:ShowOverlay(button);
+                    button:RegisterForDrag("LeftButton");
+                else
+                    A:HideOverlay(button);
+                    button:RegisterForDrag();
+                end
             end
-        else -- Player do not got the level for this tier, resetting and hiding buttons
+        end
+    --- PvP talents
+    else
+        A:SetTalentsFrameForPvp();
+
+        for i=1,6 do
+            local _, selectedTalent = GetTalentTierInfo(i, talentGroup, false);
+
             for j=1,3 do
+                local talentID, name, texture, selected, available, _, unlocked = GetPvpTalentInfo(i, j, talentGroup, false);
                 local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
 
-                button.talentGroup = nil;
-                button:SetID(0); -- SetID require a value
-                SetItemButtonTexture(button, "Interface\\ICONS\\INV_Misc_QuestionMark");
-                button.icon:SetDesaturated(false);
-                button:Hide();
+                button.talentGroup = talentGroup;
+                button:SetID(talentID);
+                SetItemButtonTexture(button, texture);
+
+                if ( unlocked ) then
+                    button.icon:SetDesaturated(false);
+                else
+                    button.icon:SetDesaturated(true);
+                end
+
+                if ( selected ) then
+                    A:ShowOverlay(button);
+                    button:RegisterForDrag("LeftButton");
+                else
+                    A:HideOverlay(button);
+                    button:RegisterForDrag();
+                end
             end
         end
     end
@@ -603,98 +758,48 @@ function A:TalentsFrameUpdate()
     -- Talents switch items
     -- No need to check the minimum level requirement (which is 15)
     -- If we are here the player got some talents to choose from
-    local playerLevel = UnitLevel("player");
-    local solo, group, count, countBank;
-    local switchItemsHeight = 0;
-    local button1 = _G["BrokerSpecializationsTalentsFrameItemButton1"];
-    local button2 = _G["BrokerSpecializationsTalentsFrameItemButton2"];
+    local count, countBank, tbl;
 
-    for k,v in ipairs(A.talentsSwitchItems) do
-        for kk,vv in ipairs(v) do
-            count = GetItemCount(vv, false);
-            countBank = GetItemCount(vv, true);
+    if ( UnitLevel("player") > 100 ) then
+        tbl = A.talentsSwitchItems[2];
+    else
+        tbl = A.talentsSwitchItems[1];
+    end
 
-            if ( (count > 0 or (count == 0 and countBank > 0)) -- We got this item, or we got it in the bank
-            and ((playerLevel <= 100 and k == 1) or (playerLevel > 100 and k == 2)) -- This check if we are using the correct table
-            -- This check if we already got a solo or group item, or if we got 0 and >0 in the bank from the last pass
-            and (((not solo and kk == 1) or (solo == 0 and kk == 1)) or ((not group and kk == 2) or (group == 0 and kk == 2))) ) then
-                local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(vv);
+    for k,v in ipairs(tbl) do
+        local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(v);
 
-                button = _G["BrokerSpecializationsTalentsFrameItemButton"..kk];
-                button:SetID(vv);
-                button.icon:SetTexture(itemTexture);
-                button.count:SetText(count);
-                button.countNum = count;
-                button.countBank = countBank;
+        count = GetItemCount(v, false);
+        countBank = GetItemCount(v, true);
+        button = _G["BrokerSpecializationsTalentsFrameItemButton"..k];
+        button:SetID(v);
+        button.icon:SetTexture(itemTexture);
+        button.count:SetText(count);
+        button.countNum = count;
+        button.countBank = countBank;
+        button.itemName = itemName;
 
-                -- Doing this to inform the player he got some in his bank
-                -- The display is handled by the xml
-                if ( count == 0 ) then
-                    button:SetAttribute("item", nil);
-                    button.icon:SetDesaturated(true);
-                else
-                    button:SetAttribute("item", itemName);
-                    button.icon:SetDesaturated(false);
-                end
-
-                if ( kk == 1 ) then
-                    solo = count;
-                else
-                    group = count;
-                end
-            end
+        if ( count == 0 ) then
+            button:SetAttribute("item", nil);
+            button.icon:SetDesaturated(true);
+        else
+            button:SetAttribute("item", itemName);
+            button.icon:SetDesaturated(false);
         end
     end
-
-    -- Buttons visibility and anchors
-    if ( solo and group ) then
-        button1:ClearAllPoints();
-        button1:SetPoint("BOTTOM", BrokerSpecializationsTalentsFrameBottomCloseButton, "TOP", -21, 6);
-        button1:Show();
-
-        button2:ClearAllPoints();
-        button2:SetPoint("LEFT", button1, "RIGHT", 6, 0);
-        button2:Show();
-
-        switchItemsHeight = 42;
-    elseif ( solo ) then
-        button1:ClearAllPoints();
-        button1:SetPoint("BOTTOM", BrokerSpecializationsTalentsFrameBottomCloseButton, "TOP", 0, 6);
-        button1:Show();
-
-        button2:Hide();
-        button2:SetAttribute("item", nil);
-
-        switchItemsHeight = 42;
-    elseif ( group ) then
-        button1:Hide();
-        button1:SetAttribute("item", nil);
-
-        button2:ClearAllPoints();
-        button2:SetPoint("BOTTOM", BrokerSpecializationsTalentsFrameBottomCloseButton, "TOP", 0, 6);
-        button2:Show();
-
-        switchItemsHeight = 42;
-    else
-        button1:Hide();
-        button1:SetAttribute("item", nil);
-
-        button2:Hide();
-        button2:SetAttribute("item", nil);
-    end
-
-    -- Set frame size
-    -- Title height offset + close button height + his offset + offset = 28 + 22 + 4 + 6 = 60 - This is static
-    -- Now add talent button height + offset * tiers = 36 + 6 * x - This is variable
-    -- And if we got some switch items add the height of a button + offset = 36 + 6 = 42 - This is defined above
-    A.talentsFrame:SetHeight(60 + (42 * tiers) + switchItemsHeight);
 end
 
 function A:TalentButtonOnClick(button)
     if ( A.inCombat ) then return; end
 
-    if ( LearnTalent(button:GetID()) ) then
-        A:TalentsFrameUpdate();
+    if ( button:GetParent().currentTab == "talents" ) then
+        if ( LearnTalent(button:GetID()) ) then
+            A:TalentsFrameUpdate();
+        end
+    else
+        if ( LearnPvpTalent(button:GetID()) ) then
+            A:TalentsFrameUpdate();
+        end
     end
 end
 
@@ -713,8 +818,22 @@ function A:SetTalentsSwitchBuffsNames()
                 A.talentsSwitchBuffsNames[#A.talentsSwitchBuffsNames+1] = name;
             else
                 A:ScheduleTimer("SetTalentsSwitchBuffsNames", 0.5);
+                return;
             end
 
+        end
+    end
+end
+
+function A:CacheTalentsSwitchItems()
+    for k,v in ipairs(A.talentsSwitchItems) do
+        for kk,vv in ipairs(v) do
+            local itemName , _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(vv);
+
+            if ( not itemName or not itemTexture ) then
+                A:ScheduleTimer("CacheTalentsSwitchItems", 0.5);
+                return;
+            end
         end
     end
 end
@@ -738,19 +857,28 @@ function A:SetSwitchItemsTooltip(frame)
         end
     end
 
+    if ( frame.countNum == 0 and frame.countBank > 0 ) then
+        GameTooltip:AddLine(L["You have %d %s in your bank."]:format(frame.countBank, frame.itemName));
+    end
+
     -- Needed to update the tooltip height
     GameTooltip:Show();
 end
 
-function A:TalentsFrameShowOrHide(relativeTo)
+function A:TalentsFrameShowOrHide(relativeTo, tab)
     if ( A.talentsFrame:IsShown() ) then
         A.talentsFrame:Hide();
     else
         if ( GetMaxTalentTier() == 0 ) then return; end
 
+        if ( not tab ) then
+            tab = "talents";
+        end
+
         local point, relativePoint = A:SmartAnchor();
         A.talentsFrame:ClearAllPoints();
         A.talentsFrame:SetPoint(point, relativeTo, relativePoint, 0, 0);
+        A.talentsFrame.currentTab = tab;
         CloseDropDownMenus();
         A:HideTooltip();
         A.talentsFrame:Show();

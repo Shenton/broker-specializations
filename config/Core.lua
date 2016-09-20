@@ -278,15 +278,22 @@ function A:ConfigurationPanel()
                     },
                 },
             },
+            specializationsOptions =
+            {
+                order = 100,
+                name = L["Specializations"],
+                type = "group",
+                args = {},
+            },
         },
     };
 
-    local tabOrder = 100;
+    local groupOrder = 0;
 
     for k,v in ipairs(A.specDB) do
-        configPanel.args["spec"..v.name] =
+        configPanel.args.specializationsOptions.args["spec"..v.name] =
         {
-            order = tabOrder,
+            order = groupOrder,
             name = "|T"..v.icon..":16:16:0:0|t "..v.name,
             type = "group",
             args =
@@ -313,12 +320,12 @@ function A:ConfigurationPanel()
                 },
             },
         };
-        tabOrder = tabOrder + 100;
+        groupOrder = groupOrder + 1;
 
         local order = 0;
 
         for _,vv in ipairs(A.gearSetsDB) do
-            configPanel.args["spec"..v.name].args.gearSet.args[order..vv.name] =
+            configPanel.args.specializationsOptions.args["spec"..v.name].args.gearSet.args[order..vv.name] =
             {
                 order = order,
                 name = vv.name,
@@ -332,13 +339,11 @@ function A:ConfigurationPanel()
             order = order + 1;
         end
 
-        local _, _, currentName, currentIcon = A:GetCurrentSpecInfos();
-
-        configPanel.args["spec"..v.name].args.lootSpec.args["0current"] =
+        configPanel.args.specializationsOptions.args["spec"..v.name].args.lootSpec.args["0current"] =
         {
             order = 0,
-            name = L["Current specialization ( %s )"]:format(currentName),
-            image = currentIcon,
+            name = L["Current specialization ( %s )"]:format(v.name),
+            image = v.icon,
             desc = L["Select this to use current specialization for loot specialization when switching to specialization %s."]:format(v.name),
             width = "full",
             type = "toggle",
@@ -349,13 +354,12 @@ function A:ConfigurationPanel()
         order = 1;
 
         for _,vv in ipairs(A.specDB) do
-            configPanel.args["spec"..v.name].args.lootSpec.args[order..vv.name] =
+            configPanel.args.specializationsOptions.args["spec"..v.name].args.lootSpec.args[order..vv.name] =
             {
                 order = order,
                 name = vv.name,
                 image = vv.icon,
                 desc = L["Select this to use %s for loot specialization when switching to specialization %s."]:format(vv.name, v.name),
-                --width = "full",
                 type = "toggle",
                 set = function(info, val) A.db.profile.specOptions[v.id].lootSpec = val and vv.id or nil; end,
                 get = function() return A.db.profile.specOptions[v.id].lootSpec == vv.id and 1 or nil; end,

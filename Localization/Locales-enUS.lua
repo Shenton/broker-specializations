@@ -26,6 +26,9 @@ L["Minimap"] = true;
 L["None"] = true;
 
 L["Pet"] = true;
+L["PvP"] = true;
+
+L["Specializations"] = true;
 
 L["Talents"] = true;
 L["Text"] = true;
@@ -102,6 +105,7 @@ L["Switch to"] = true;
 L["With equipment set"] = true;
 L["And loot specialization"] = true;
 L["Pet specializations switch"] = true;
+L["You have %d %s in your bank."] = true;
 L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 
