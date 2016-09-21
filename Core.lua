@@ -1398,10 +1398,10 @@ function A:Tooltip(anchorFrame)
 
     if ( A.db.profile.dualSpecEnabled ) then
         line = tip:AddLine();
-        tip:SetCell(line, 1, L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
+        tip:SetCell(line, 1, L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6EShift+Left-Click: |cFF33FF99Open the quick talents switch panel.\n|cFFC79C6EControl+Left-Click: |cFF33FF99Open the quick PvP talents switch panel.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
     else
         line = tip:AddLine();
-        tip:SetCell(line, 1, L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
+        tip:SetCell(line, 1, L["|cFFC79C6ELeft-Click: |cFF33FF99Open the quick talents switch panel.\n|cFFC79C6EShift+Left-Click: |cFF33FF99Open the quick PvP talents switch panel.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."], nil, nil, 2);
     end
 
     tip:SmartAnchorTo(anchorFrame);
@@ -1431,7 +1431,6 @@ A.aceDefaultDB =
         dualSpecEnabled = nil,
         dualSpecOne = 1,
         dualSpecTwo = 2,
-        talentFrameEnabled = 1,
         switchTooltip = nil,
         tooltipInfos = 1,
         talentsProfiles = {},
@@ -1616,13 +1615,19 @@ function A:OnEnable()
         OnClick = function(self, button)
             if (button == "LeftButton") then
                 if ( A.db.profile.dualSpecEnabled ) then
-                    if ( IsShiftKeyDown() and A.db.profile.talentFrameEnabled ) then
+                    if ( IsShiftKeyDown() ) then
                         A:TalentsFrameShowOrHide(self);
+                    elseif ( IsControlKeyDown() ) then
+                        A:TalentsFrameShowOrHide(self, "pvp");
                     else
                         A:DualSwitch();
                     end
-                elseif ( A.db.profile.talentFrameEnabled ) then
-                    A:TalentsFrameShowOrHide(self);
+                else
+                    if ( IsShiftKeyDown() ) then
+                        A:TalentsFrameShowOrHide(self, "pvp");
+                    else
+                        A:TalentsFrameShowOrHide(self);
+                    end
                 end
             elseif ( button == "RightButton" ) then
                 if ( A.menuFrame.initialize ~= DropdownMenu ) then
