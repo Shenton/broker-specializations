@@ -184,7 +184,7 @@ function A:ConfigurationPanel()
                             {
                                 order = 0,
                                 name = L["Enabled"],
-                                desc = L["With this enabled it will hide the talents learning messages from your chat."],
+                                desc = L["With this enabled it will hide the talents learning/unlearning messages from your chat."],
                                 type = "toggle",
                                 set = function() A.db.profile.chatFilter = not A.db.profile.chatFilter; end,
                                 get = function() return A.db.profile.chatFilter; end,

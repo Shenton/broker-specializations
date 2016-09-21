@@ -112,7 +112,7 @@ L["Delete the profile %s.\n\n|cffff3333This is definitive."] = true;
 L["Enter the new name of the profile %s. It will enable the button next to this box."] = true;
 L["Rename the profile %s to %s."] = true;
 L["Chat filter"] = true;
-L["With this enabled it will hide the talents learning messages from your chat."] = true;
+L["With this enabled it will hide the talents learning/unlearning messages from your chat."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;
