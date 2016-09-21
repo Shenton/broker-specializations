@@ -18,6 +18,8 @@
 
 local ipairs = ipairs;
 local _G = _G;
+local pairs = pairs;
+local tostring = tostring;
 
 --[[-------------------------------------------------------------------------------
     Addon global

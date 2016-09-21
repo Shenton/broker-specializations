@@ -17,7 +17,13 @@
 -- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
 -- GLOBALS: GameTooltip, BINDING_HEADER_BROKERSPECIALIZATIONS, BINDING_NAME_BROKERSPECIALIZATIONSONE
 -- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSTWO, BINDING_NAME_BROKERSPECIALIZATIONSTHREE
--- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSFOUR, BINDING_NAME_BROKERSPECIALIZATIONSDUAL
+-- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSFOUR, BINDING_NAME_BROKERSPECIALIZATIONSDUAL, UIParent
+-- GLOBALS: GetCursorPosition, IsShiftKeyDown, BrokerSpecializationsTalentsFrame, ChatFrame_RemoveMessageEventFilter
+-- GLOBALS: ChatFrame_AddMessageEventFilter, ERR_SPELL_UNLEARNED_S, ERR_LEARN_ABILITY_S, ERR_LEARN_PASSIVE_S
+-- GLOBALS: ERR_LEARN_SPELL_S, ERR_PET_LEARN_ABILITY_S, ERR_PET_LEARN_SPELL_S, ERR_PET_SPELL_UNLEARNED_S
+-- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
+-- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture, GetPvpTalentInfo
+-- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass
 
 --[[-------------------------------------------------------------------------------
     Global to local
@@ -30,6 +36,10 @@ local _G = _G;
 local tonumber = tonumber;
 local string = string;
 local type = type;
+local pairs = pairs;
+local tostring = tostring;
+local tinsert = tinsert;
+local tremove = tremove;
 
 --[[-------------------------------------------------------------------------------
     Libs & addon global
@@ -234,7 +244,7 @@ function A:SetEverything()
     A.currentSpec = GetSpecialization();
     A:SetSpecializationsDatabase();
 
-    if ( playerClass == "HUNTER" ) then
+    if ( A.playerClass == "HUNTER" ) then
         A.currentPetSpec = GetSpecialization(false, true);
         A:SetPetSpecializationsDatabase();
     end
@@ -777,10 +787,10 @@ function A:TalentsFrameUpdate()
 
     for k,v in ipairs(tbl) do
         local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(v);
+        local button = _G["BrokerSpecializationsTalentsFrameItemButton"..k];
 
         count = GetItemCount(v, false);
         countBank = GetItemCount(v, true);
-        button = _G["BrokerSpecializationsTalentsFrameItemButton"..k];
         button:SetID(v);
         button.icon:SetTexture(itemTexture);
         button.count:SetText(count);
