@@ -12,11 +12,16 @@ if L then
 -- Addon name
 L["Broker Specializations"] = true;
 -- Words
+L["Add"] = true;
 L["Automation"] = true;
 
+L["Cancel"] = true;
 L["Close"] = true;
 L["Configuration"] = true;
 
+L["Delete"] = true;
+
+L["Enable"] = true;
 L["Enabled"] = true;
 
 L["Icon"] = true;
@@ -25,8 +30,13 @@ L["Minimap"] = true;
 
 L["None"] = true;
 
+L["Options"] = true;
+
 L["Pet"] = true;
+L["Profiles"] = true;
 L["PvP"] = true;
+
+L["Rename"] = true;
 
 L["Specializations"] = true;
 
@@ -53,6 +63,7 @@ L["Specializations switch"] = true;
 L["Gear set"] = true;
 L["Loot specialization"] = true;
 L["Other switches"] = true;
+L["Talents profiles"] = true;
 
 -- Messages
 L["Failed to load configuration, reason: %s."] = true;
@@ -60,6 +71,7 @@ L["Cannot switch specialization in combat."] = true;
 L["You cannot select the same specialization with Dual Specialization Mode."] = true;
 L["You are resting."] = true;
 L["You are already buffed with %s."] = true;
+L["Cannot switch talents in combat."] = true;
 
 -- Config
 L["Broker Specializations configuration loader"] = true;
@@ -95,6 +107,12 @@ L["Informations"] = true;
 L["Add some informations to the tooltip."] = true;
 L["Loot specialization icon size"] = true;
 L["Set the loot specialization icon size on the Data Broker display."] = true;
+L["Enable the delete button for the profile %s."] = true;
+L["Delete the profile %s.\n\n|cffff3333This is definitive."] = true;
+L["Enter the new name of the profile %s. It will enable the button next to this box."] = true;
+L["Rename the profile %s to %s."] = true;
+L["Chat filter"] = true;
+L["With this enabled it will hide the talents learning messages from your chat."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;
@@ -108,6 +126,10 @@ L["Pet specializations switch"] = true;
 L["You have %d %s in your bank."] = true;
 L["|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
+
+-- Static popup
+L["Enter the name of your talents profile."] = true;
+L["The profile %s already exists, please choose another name."] = true;
 
 -- Command help
 L["COMMAND_HELP"] = [["Available commands: /brokerspecializations, /brokerspec, /spec, /bs. They are aliases, to prevent compatibility issues.

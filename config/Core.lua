@@ -30,6 +30,9 @@ local L = A.L;
     Configuration Panel
 -------------------------------------------------------------------------------]]--
 
+local profilesRenameTable = {};
+local profilesDeleteTable = {};
+
 function A:ConfigurationPanel()
     local dualSpecSelectValues = {};
 
@@ -167,6 +170,25 @@ function A:ConfigurationPanel()
                             },
                         },
                     },
+                    chatFilter =
+                    {
+                        order = 70,
+                        name = L["Chat filter"],
+                        type = "group",
+                        inline = true,
+                        args =
+                        {
+                            enabled =
+                            {
+                                order = 0,
+                                name = L["Enabled"],
+                                desc = L["With this enabled it will hide the talents learning messages from your chat."],
+                                type = "toggle",
+                                set = function() A.db.profile.chatFilter = not A.db.profile.chatFilter; end,
+                                get = function() return A.db.profile.chatFilter; end,
+                            },
+                        },
+                    },
                     dataBroker =
                     {
                         order = 100,
@@ -285,6 +307,29 @@ function A:ConfigurationPanel()
                 type = "group",
                 args = {},
             },
+            talentsProfiles =
+            {
+                order = 200,
+                name = L["Talents profiles"],
+                type = "group",
+                args =
+                {
+                    -- options =
+                    -- {
+                        -- order = 0,
+                        -- name = L["Options"],
+                        -- type = "group",
+                        -- args = {},
+                    -- },
+                    -- profiles =
+                    -- {
+                        -- order = 0,
+                        -- name = L["Profiles"],
+                        -- type = "group",
+                        -- args = {},
+                    -- },
+                },
+            },
         },
     };
 
@@ -366,6 +411,107 @@ function A:ConfigurationPanel()
             };
             order = order + 1;
         end
+    end
+
+    groupOrder = 0;
+
+    for k,v in pairs(A.db.profile.talentsProfiles) do
+         --configPanel.args.talentsProfiles.args.profiles.args[tostring(k)] =
+         configPanel.args.talentsProfiles.args[tostring(k)] =
+         {
+            order = groupOrder,
+            name = tostring(k),
+            type = "group",
+            inline = true,
+            args =
+            {
+                renameHeader =
+                {
+                    order = 0,
+                    name = L["Rename"],
+                    type = "header",
+                },
+                renameProfileInput =
+                {
+                    order = 1,
+                    name = L["Rename"],
+                    desc = L["Enter the new name of the profile %s. It will enable the button next to this box."]:format(tostring(k));
+                    type = "input",
+                    get = function()
+                        return profilesRenameTable[k] or "";
+                    end,
+                    set = function(info, val)
+                        if ( val == "" and profilesRenameTable[k] ) then
+                            profilesRenameTable[k] = nil;
+                        end
+
+                        val = tostring(val);
+                        profilesRenameTable[k] = val;
+                    end,
+                },
+                renameProfileExecute =
+                {
+                    order = 2,
+                    name = L["Rename"],
+                    desc = L["Rename the profile %s to %s."]:format(tostring(k), profilesRenameTable[k] or "");
+                    type = "execute",
+                    disabled = function()
+                        if ( not profilesRenameTable[k] ) then
+                            return true;
+                        end
+                    end,
+                    func = function()
+                        if ( A.db.profile.talentsProfiles[profilesRenameTable[k]] ) then
+                            A:Message(L["The profile %s already exists, please choose another name."]:format(profilesRenameTable[k]), 1);
+                            profilesRenameTable[k] = nil;
+                            return;
+                        end
+
+                       A.db.profile.talentsProfiles[profilesRenameTable[k]] = {};
+
+                       for kk,vv in pairs(A.db.profile.talentsProfiles[k]) do
+                            A.db.profile.talentsProfiles[profilesRenameTable[k]][kk] = vv;
+                       end
+
+                       A.db.profile.talentsProfiles[k] = nil;
+                       profilesRenameTable[k] = nil;
+                    end,
+                },
+                deleteHeader =
+                {
+                    order = 100,
+                    name = L["Delete"],
+                    type = "header",
+                },
+                deleteProfileToggle =
+                {
+                    order = 101,
+                    name = L["Enable"],
+                    desc = L["Enable the delete button for the profile %s."]:format(tostring(k));
+                    type = "toggle",
+                    get = profilesDeleteTable[k],
+                    set = function() profilesDeleteTable[k] = not profilesDeleteTable[k]; end,
+                },
+                deleteProfileExecute =
+                {
+                    order = 102,
+                    name = L["Delete"],
+                    desc = L["Delete the profile %s.\n\n|cffff3333This is definitive."]:format(tostring(k));
+                    type = "execute",
+                    disabled = function()
+                        if ( not profilesDeleteTable[k] ) then
+                            return true;
+                        end
+                    end,
+                    func = function()
+                       A.db.profile.talentsProfiles[k] = nil;
+                       profilesDeleteTable[k] = nil;
+                    end,
+                },
+            },
+         };
+
+         groupOrder = groupOrder + 1;
     end
 
     -- Ace3 profiles options

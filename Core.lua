@@ -216,6 +216,16 @@ function A:SmartAnchor()
     end
 end
 
+function A:TableCount(tbl)
+    local count = 0;
+
+    for _ in pairs(tbl) do
+        count = count + 1;
+    end
+
+    return count;
+end
+
 --- Called on load, or when switching profile
 function A:SetEverything()
     A.playerClass = select(2, UnitClass("player"));
@@ -235,6 +245,7 @@ function A:SetEverything()
     A:UpdateBroker();
     A:SetTalentsSwitchBuffsNames();
     A:CacheTalentsSwitchItems();
+    A:SetChatFilterCallback();
 end
 
 --[[-------------------------------------------------------------------------------
@@ -349,6 +360,7 @@ function A:SetSpecialization(specIndex, isPet)
         return;
     end
 
+    A:SetChatFilterCallback();
     SetSpecialization(specIndex, isPet);
 end
 
@@ -552,6 +564,7 @@ function A:TalentsFrameOnLoad(self)
     self.TitleText:ClearAllPoints();
     self.TitleText:SetPoint("TOP", self, "TOP", -12, -4);
     self.closeButton:SetText(L["Close"]);
+    tinsert(UISpecialFrames, self:GetName());
 end
 
 function A:TalentsFrameOnShow(self)
@@ -698,8 +711,6 @@ function A:TalentsFrameUpdate()
         A:SetTalentsFrameForTalents();
 
         for i=1,7 do
-            local _, selectedTalent = GetTalentTierInfo(i, talentGroup, false);
-
             for j=1,3 do
                 local talentID, name, texture, selected, available = GetTalentInfo(i, j, talentGroup, false);
                 local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
@@ -728,8 +739,6 @@ function A:TalentsFrameUpdate()
         A:SetTalentsFrameForPvp();
 
         for i=1,6 do
-            local _, selectedTalent = GetTalentTierInfo(i, talentGroup, false);
-
             for j=1,3 do
                 local talentID, name, texture, selected, available, _, unlocked = GetPvpTalentInfo(i, j, talentGroup, false);
                 local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
@@ -793,11 +802,11 @@ function A:TalentButtonOnClick(button)
     if ( A.inCombat ) then return; end
 
     if ( button:GetParent().currentTab == "talents" ) then
-        if ( LearnTalent(button:GetID()) ) then
+        if ( A:LearnTalent(button:GetID()) ) then
             A:TalentsFrameUpdate();
         end
     else
-        if ( LearnPvpTalent(button:GetID()) ) then
+        if ( A:LearnPvpTalent(button:GetID()) ) then
             A:TalentsFrameUpdate();
         end
     end
@@ -885,6 +894,142 @@ function A:TalentsFrameShowOrHide(relativeTo, tab)
     end
 end
 
+function A:LearnTalent(id)
+    if ( A.inCombat ) then
+        A:Message(L["Cannot switch talents in combat."], 1);
+        return;
+    end
+
+    A:SetChatFilterCallback();
+    LearnTalent(id);
+end
+
+function A:LearnPvpTalent(id)
+    if ( A.inCombat ) then
+        A:Message(L["Cannot switch talents in combat."], 1);
+        return;
+    end
+
+    A:SetChatFilterCallback();
+    LearnPvpTalent(id);
+end
+
+--[[-------------------------------------------------------------------------------
+    Talents profile
+-------------------------------------------------------------------------------]]--
+
+StaticPopupDialogs["BROKERSPECIALIZATIONS_ADD_TALENTS_PROFILE"] = {
+    text = L["Enter the name of your talents profile."],
+    button1 = L["Add"],
+    button2 = L["Cancel"],
+    hasEditBox = true,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    OnAccept = function(self)
+        local name = self.editBox:GetText();
+        name = tostring(name);
+
+        if ( A.db.profile.talentsProfiles[name] ) then
+            A:Message(L["The profile %s already exists, please choose another name."]:format(name), 1);
+            return;
+        end
+
+        A.db.profile.talentsProfiles[name] = A:GetTalentsSnapshot();
+    end,
+};
+
+function A:AddTalentsProfile()
+    StaticPopup_Show("BROKERSPECIALIZATIONS_ADD_TALENTS_PROFILE");
+end
+
+function A:GetTalentsSnapshot()
+    local talentGroup = GetActiveSpecGroup(false);
+    local tbl = {};
+
+    for i=1,7 do
+        for j=1,3 do
+            local talentID, _, _, selected = GetTalentInfo(i, j, talentGroup, false);
+
+            if ( selected ) then
+                tbl[i] = talentID;
+            end
+        end
+    end
+
+    return tbl;
+end
+
+function A:SetTalentsProfile(name)
+    A:SetTalentsBrute(name);
+end
+
+function A:SetTalentsBrute(name)
+    if ( A.inCombat ) then return; end
+
+    if ( A.db.profile.talentsProfiles[name] ) then
+        for k,v in pairs(A.db.profile.talentsProfiles[name]) do
+            A:LearnTalent(v);
+        end
+    end
+end
+
+--[[-------------------------------------------------------------------------------
+    Hide spam
+-------------------------------------------------------------------------------]]--
+
+--- Build the strings filter table
+-- Basically removing format conversion characters from GlobalStrings
+function A:BuildFilterTable()
+    local str;
+    local globalStrings =
+    {
+        ERR_SPELL_UNLEARNED_S,
+        ERR_LEARN_ABILITY_S,
+        ERR_LEARN_PASSIVE_S,
+        ERR_LEARN_SPELL_S,
+        ERR_PET_LEARN_ABILITY_S,
+        ERR_PET_LEARN_SPELL_S,
+        ERR_PET_SPELL_UNLEARNED_S,
+    };
+
+    A.filterTable = {};
+
+    for _,v in ipairs(globalStrings) do
+        str = string.gsub(v, "%.", "");
+        str = string.gsub(str, "%%s", ".+");
+        A.filterTable[#A.filterTable+1] = str;
+    end
+end
+
+--- Filter callback function
+-- Called by "ChatFrame_MessageEventHandler" from ChatFrame.lua
+A.ChatFilter = function(self, event, msg, ...)
+    if ( A.inCombat ) then return; end
+
+    if ( not A.filterTable ) then A:BuildFilterTable(); end
+
+    for _,v in ipairs(A.filterTable) do
+        if ( string.find(msg, v) ) then return 1; end
+    end
+
+    return nil;
+end
+
+--- Set the chat filter callback
+function A:SetChatFilterCallback()
+    if ( not A.chatFilterTimer and A.db.profile.chatFilter ) then
+        ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", A.ChatFilter);
+        A.chatFilterTimer = A:ScheduleTimer("UnsetChatFilterCallback", 15);
+    end
+end
+
+-- Unset the chat filter callback, this is called by AceTimer after spec/talent switch
+function A:UnsetChatFilterCallback()
+    ChatFrame_RemoveMessageEventFilter("CHAT_MSG_SYSTEM", A.ChatFilter);
+    A.chatFilterTimer = nil;
+end
+
 --[[-------------------------------------------------------------------------------
     Dropdown menu
 -------------------------------------------------------------------------------]]--
@@ -956,6 +1101,58 @@ local function DropdownMenu(self, level)
             UIDropDownMenu_AddButton(info, level);
         end
 
+        -- Talents profiles (title)
+        info.text = L["Talents profiles"];
+        info.notCheckable = 1;
+        info.isTitle = 1;
+        info.icon = nil;
+        info.disabled = nil;
+        info.iconOnly = nil;
+        info.iconInfo = nil;
+        UIDropDownMenu_AddButton(info, level);
+
+        -- Add profile
+        info.text = L["Add"];
+        info.keepShownOnClick = nil;
+        info.hasArrow = nil;
+        info.disabled = nil;
+        info.isTitle = nil;
+        info.notClickable = nil;
+        info.func = function() A:AddTalentsProfile(); end;
+        UIDropDownMenu_AddButton(info, level);
+
+        -- Talents profile (menu)
+        info.text = L["Profiles"];
+        info.value = "TALENTSPROFILES";
+        info.keepShownOnClick = 1;
+        info.hasArrow = 1;
+        if ( A:TableCount(A.db.profile.talentsProfiles) > 0 ) then
+            info.disabled = nil;
+        else
+            info.disabled = 1;
+        end
+        UIDropDownMenu_AddButton(info, level);
+
+        -- Separator
+        info.text = "";
+        info.value = nil;
+        info.isTitle = 1;
+        info.notClickable = 1;
+        info.hasArrow = nil;
+        info.iconOnly = 1;
+        info.icon = "Interface\\Common\\UI-TooltipDivider-Transparent";
+        info.iconInfo =
+        {
+            tCoordLeft = 0,
+            tCoordRight = 1,
+            tCoordTop = 0,
+            tCoordBottom = 1,
+            tSizeX = 0,
+            tSizeY = 8,
+            tFitDropDownSizeX = 1,
+        };
+        UIDropDownMenu_AddButton(info, level);
+
         -- Other switches (title)
         info.text = L["Other switches"];
         info.notCheckable = 1;
@@ -964,6 +1161,8 @@ local function DropdownMenu(self, level)
         info.disabled = nil;
         info.iconOnly = nil;
         info.iconInfo = nil;
+        info.keepShownOnClick = nil;
+        info.hasArrow = nil;
         UIDropDownMenu_AddButton(info, level);
 
         -- Set options
@@ -1076,6 +1275,14 @@ local function DropdownMenu(self, level)
                 info.padding = 20;
                 info.disabled = v.current;
                 info.func = function() A:SetSpecialization(k, true); end;
+                UIDropDownMenu_AddButton(info, level);
+            end
+        elseif ( UIDROPDOWNMENU_MENU_VALUE == "TALENTSPROFILES" ) then
+            for k,v in pairs(A.db.profile.talentsProfiles) do
+                info.text = k;
+                info.icon = nil;
+                info.padding = 0;
+                info.func = function() A:SetTalentsProfile(k); end;
                 UIDropDownMenu_AddButton(info, level);
             end
         end
@@ -1217,6 +1424,8 @@ A.aceDefaultDB =
         talentFrameEnabled = 1,
         switchTooltip = nil,
         tooltipInfos = 1,
+        talentsProfiles = {},
+        chatFilter = nil,
     },
 };
 
