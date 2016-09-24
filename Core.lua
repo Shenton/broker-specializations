@@ -226,14 +226,99 @@ function A:SmartAnchor()
     end
 end
 
-function A:TableCount(tbl)
-    local count = 0;
+--- Return the number of entries in a non integer indexed table
+-- function A:TableCount(tbl)
+    -- local count = 0;
 
-    for _ in pairs(tbl) do
-        count = count + 1;
+    -- for _ in pairs(tbl) do
+        -- count = count + 1;
+    -- end
+
+    -- return count;
+-- end
+
+--- Simple shallow copy for copying specialization profiles
+-- Shamelessly ripped off from Ace3 AceDB-3.0
+-- Did I say I love you guys? :p
+function A:CopyTable(src, dest)
+    if ( type(dest) ~= "table" ) then dest = {}; end
+
+    if ( type(src) == "table" ) then
+        for k,v in pairs(src) do
+            if ( type(v) == "table" ) then
+                v = A:CopyTable(v, dest[k]);
+            end
+
+            dest[k] = v;
+        end
     end
 
-    return count;
+    return dest;
+end
+
+--- pairs function with alphabetic sort
+function A:PairsByKeys(t, f)
+    local a, i = {}, 0;
+
+    for n in pairs(t) do a[#a+1] = n; end
+    table.sort(a, f);
+
+    local iter = function()
+        i = i + 1;
+        if ( not a[i] ) then
+            return nil;
+        else
+            return a[i], t[a[i]];
+        end
+    end
+
+    return iter;
+end
+
+--- Compare two tables
+-- Return true if they are identical, false otherwise
+function A:CompareTables(t1, t2)
+    if ( type(t1) ~= "table" or type(t2) ~= "table" ) then return nil; end
+
+    if ( #t1 ~= #t2 ) then return nil; end
+
+    for k,v in pairs(t1) do
+        if ( type(v) == "table" ) then
+            if ( type(t2[k]) == "table" ) then
+                if ( not A:CompareTables(t2[k], v) ) then
+                    return nil;
+                end
+            else
+                return nil;
+            end
+        elseif ( t2[k] ~= v ) then
+            return nil;
+        end
+    end
+
+    return 1;
+end
+
+--- Check and clean the database
+-- Added to prevent the player from using a copied profile from another class
+function A:CleanupDatabase()
+    -- Reset specializations and talents options if there is a class mismatch
+    if ( A.db.profile.playerClass and A.db.profile.playerClass ~= "" and A.db.profile.playerClass ~= A.playerClass ) then
+        A.db.profile.specOptions = {};
+        A:SetLootSpecOptions();
+        A.db.profile.dualSpecOne = 1;
+        A.db.profile.dualSpecTwo = 2;
+        A.db.profile.talentsProfiles = {};
+        A:Message(L["A class mismatch was detected, your specializations and talents options have been reset."], 1);
+    end
+
+    -- This will remove old talents profiles
+    -- No message here this was alpha
+    for k,v in pairs(A.db.profile.talentsProfiles) do
+        if ( not v.specialization ) then
+            A.db.profile.talentsProfiles[k] = nil;
+        end
+    end
 end
 
 --- Called on load, or when switching profile
@@ -249,13 +334,17 @@ function A:SetEverything()
         A:SetPetSpecializationsDatabase();
     end
 
-    A:SetBindingsNames()
+    A:SetBindingsNames();
     A:SetLootSpecOptions();
     A:SetGearSetsDatabase();
     A:UpdateBroker();
     A:SetTalentsSwitchBuffsNames();
     A:CacheTalentsSwitchItems();
-    A:SetChatFilterCallback();
+
+    -- Calling CleanupDatabase before setting the player class in the DB
+    -- It's very unlikely to happen, but in case of rename it will handle things
+    A:CleanupDatabase();
+    A.db.profile.playerClass = A.playerClass;
 end
 
 --[[-------------------------------------------------------------------------------
@@ -932,24 +1021,80 @@ StaticPopupDialogs["BROKERSPECIALIZATIONS_ADD_TALENTS_PROFILE"] = {
     text = L["Enter the name of your talents profile."],
     button1 = L["Add"],
     button2 = L["Cancel"],
-    hasEditBox = true,
+    hasEditBox = 1,
+    maxLetters = 31,
     timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    OnAccept = function(self)
-        local name = self.editBox:GetText();
+    whileDead = 1,
+    hideOnEscape = 1,
+    OnShow = function(self)
+        self.button1:Disable();
+        self.button2:Enable();
+        self.editBox:SetFocus();
+    end,
+    EditBoxOnTextChanged = function (self)
+        local name = self:GetText();
         name = tostring(name);
 
-        if ( A.db.profile.talentsProfiles[name] ) then
-            A:Message(L["The profile %s already exists, please choose another name."]:format(name), 1);
-            return;
+        if ( name ~= "" ) then
+            if ( string.match(name, "^%w+$") ) then
+                self:GetParent().button1:Enable();
+                self:GetParent().text:SetText(L["Enter the name of your talents profile."]);
+            else
+                self:GetParent().button1:Disable();
+                self:GetParent().text:SetText(A.color["RED"]..L["The talents profile name should contains aplhanumeric characters only."]);
+                StaticPopup_Resize(self:GetParent(), "BROKERSPECIALIZATIONS_ADD_TALENTS_PROFILE"); -- Useful only here, it will not resize when reverting to the default text
+            end
+            
+        else
+            self:GetParent().button1:Disable();
+            self:GetParent().text:SetText(L["Enter the name of your talents profile."]);
         end
-
-        A.db.profile.talentsProfiles[name] = A:GetTalentsSnapshot();
+    end,
+    OnAccept = function(self)
+        A:AddTalentsProfile(self.editBox:GetText());
+    end,
+    EditBoxOnEnterPressed = function(self)
+        A:AddTalentsProfile(self:GetText());
+        self:GetParent():Hide();
+    end,
+    EditBoxOnEscapePressed = function(self)
+        self:GetParent():Hide();
+    end,
+    OnHide = function(self)
+        self.editBox:SetText("");
     end,
 };
 
-function A:AddTalentsProfile()
+function A:AddTalentsProfile(name)
+    name = tostring(name);
+
+    if ( name == "" ) then
+        A:Message(L["The talents profile name is empty."], 1);
+        return;
+    end
+
+    if ( not string.match(name, "^%w+$") ) then
+        A:Message(L["The talents profile name should contains aplhanumeric characters only."], 1);
+        return;
+    end
+
+    if ( A.db.profile.talentsProfiles[name] ) then
+        A:Message(L["The profile %s already exists, please choose another name."]:format(name), 1);
+        return;
+    end
+
+    local _, specID, specName, specIcon = A:GetCurrentSpecInfos();
+
+    A.db.profile.talentsProfiles[name] =
+    {
+        specialization = specID,
+        specName = specName,
+        specIcon = specIcon,
+        talents = A:GetTalentsSnapshot(),
+    };
+end
+
+function A:AddTalentsProfilePopup()
     StaticPopup_Show("BROKERSPECIALIZATIONS_ADD_TALENTS_PROFILE");
 end
 
@@ -977,11 +1122,40 @@ end
 function A:SetTalentsBrute(name)
     if ( A.inCombat ) then return; end
 
-    if ( A.db.profile.talentsProfiles[name] ) then
-        for k,v in pairs(A.db.profile.talentsProfiles[name]) do
+    if ( A.db.profile.talentsProfiles[name] and A.db.profile.talentsProfiles[name].talents ) then
+        for k,v in pairs(A.db.profile.talentsProfiles[name].talents) do
             A:LearnTalent(v);
         end
     end
+end
+
+--- This will return true if we got at least 1 talent profile for the current spec
+function A:GotTalentsProfile()
+    local currentSpecID = select(2, A:GetCurrentSpecInfos());
+
+    for _,v in pairs(A.db.profile.talentsProfiles) do
+        if ( v.specialization == currentSpecID ) then
+            return 1;
+        end
+    end
+
+    return nil;
+end
+
+--- Get current used talents profile
+function A:GetCurrentUsedTalentsProfile()
+    local currentSpecID = select(2, A:GetCurrentSpecInfos());
+    local currentTalentsSnapshot = A:GetTalentsSnapshot();
+
+    for k,v in pairs(A.db.profile.talentsProfiles) do
+        if ( v.specialization == currentSpecID ) then
+            if ( A:CompareTables(v.talents, currentTalentsSnapshot) ) then
+                return k;
+            end
+        end
+    end
+
+    return nil;
 end
 
 --[[-------------------------------------------------------------------------------
@@ -1128,7 +1302,7 @@ local function DropdownMenu(self, level)
         info.disabled = nil;
         info.isTitle = nil;
         info.notClickable = nil;
-        info.func = function() A:AddTalentsProfile(); end;
+        info.func = function() A:AddTalentsProfilePopup(); end;
         UIDropDownMenu_AddButton(info, level);
 
         -- Talents profile (menu)
@@ -1136,7 +1310,7 @@ local function DropdownMenu(self, level)
         info.value = "TALENTSPROFILES";
         info.keepShownOnClick = 1;
         info.hasArrow = 1;
-        if ( A:TableCount(A.db.profile.talentsProfiles) > 0 ) then
+        if ( A:GotTalentsProfile() ) then
             info.disabled = nil;
         else
             info.disabled = 1;
@@ -1288,12 +1462,25 @@ local function DropdownMenu(self, level)
                 UIDropDownMenu_AddButton(info, level);
             end
         elseif ( UIDROPDOWNMENU_MENU_VALUE == "TALENTSPROFILES" ) then
-            for k,v in pairs(A.db.profile.talentsProfiles) do
-                info.text = k;
-                info.icon = nil;
-                info.padding = 0;
-                info.func = function() A:SetTalentsProfile(k); end;
-                UIDropDownMenu_AddButton(info, level);
+            local currentSpecID = select(2, A:GetCurrentSpecInfos());
+            local currentTalentsProfile = A:GetCurrentUsedTalentsProfile();
+            local disabled;
+
+            for k,v in A:PairsByKeys(A.db.profile.talentsProfiles) do
+                if ( v.specialization == currentSpecID ) then
+                    if ( currentTalentsProfile == k ) then
+                        disabled = 1;
+                    else
+                        disabled = nil;
+                    end
+
+                    info.text = k;
+                    info.icon = nil;
+                    info.padding = 0;
+                    info.disabled = disabled;
+                    info.func = function() A:SetTalentsProfile(k); end;
+                    UIDropDownMenu_AddButton(info, level);
+                end
             end
         end
     end
@@ -1376,12 +1563,14 @@ function A:Tooltip(anchorFrame)
         local _, _, specName, specIcon = A:GetCurrentSpecInfos();
         local _, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
         local gearSet, gearIcon = A:GetCurrentGearSet();
+        local currentTalentsProfile = A:GetCurrentUsedTalentsProfile() or L["None"];
 
         line = tip:AddLine();
         tip:SetCell(line, 1, A.color["GREEN"]..L["Informations"], nil, nil, 2);
         tip:AddLine(L["Current specialization"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
         tip:AddLine(L["Current equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
         tip:AddLine(L["Current loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+        tip:AddLine(L["Current talents profile"], A.color["PRIEST"]..currentTalentsProfile);
         tip:AddLine(" ");
 
         if ( A.db.profile.dualSpecEnabled ) then
@@ -1390,8 +1579,12 @@ function A:Tooltip(anchorFrame)
             line = tip:AddLine();
             tip:SetCell(line, 1, A.color["GREEN"]..L["Dual specialization mode is enabled"], nil, nil, 2);
             tip:AddLine(L["Switch to"], "|T"..specIcon..":16:16:0:0|t"..A.color["PRIEST"]..specName);
-            tip:AddLine(L["With equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
-            tip:AddLine(L["And loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+            if ( A.db.profile.switchGearWithSpec ) then
+                tip:AddLine(L["With equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
+            end
+            if ( A.db.profile.switchLootWithSpec ) then
+                tip:AddLine(L["And loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+            end
             tip:AddLine(" ");
         end
     end
@@ -1435,6 +1628,7 @@ A.aceDefaultDB =
         tooltipInfos = 1,
         talentsProfiles = {},
         chatFilter = nil,
+        playerClass = "";
     },
 };
 

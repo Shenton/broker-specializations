@@ -417,12 +417,12 @@ function A:ConfigurationPanel()
 
     groupOrder = 0;
 
-    for k,v in pairs(A.db.profile.talentsProfiles) do
+    for k,v in A:PairsByKeys(A.db.profile.talentsProfiles) do
          --configPanel.args.talentsProfiles.args.profiles.args[tostring(k)] =
          configPanel.args.talentsProfiles.args[tostring(k)] =
          {
             order = groupOrder,
-            name = tostring(k),
+            name = tostring(k.." ("..v.specName..")"),
             type = "group",
             inline = true,
             args =
@@ -470,11 +470,7 @@ function A:ConfigurationPanel()
                         end
 
                        A.db.profile.talentsProfiles[profilesRenameTable[k]] = {};
-
-                       for kk,vv in pairs(A.db.profile.talentsProfiles[k]) do
-                            A.db.profile.talentsProfiles[profilesRenameTable[k]][kk] = vv;
-                       end
-
+                       A:CopyTable(A.db.profile.talentsProfiles[k], A.db.profile.talentsProfiles[profilesRenameTable[k]]);
                        A.db.profile.talentsProfiles[k] = nil;
                        profilesRenameTable[k] = nil;
                     end,

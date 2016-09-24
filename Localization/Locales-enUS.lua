@@ -72,6 +72,9 @@ L["You cannot select the same specialization with Dual Specialization Mode."] = 
 L["You are resting."] = true;
 L["You are already buffed with %s."] = true;
 L["Cannot switch talents in combat."] = true;
+L["A class mismatch was detected, your specializations and talents options have been reset."] = true;
+L["The talents profile name is empty."] = true;
+L["The talents profile name should contains aplhanumeric characters only."] = true;
 
 -- Config
 L["Broker Specializations configuration loader"] = true;
@@ -124,6 +127,7 @@ L["With equipment set"] = true;
 L["And loot specialization"] = true;
 L["Pet specializations switch"] = true;
 L["You have %d %s in your bank."] = true;
+L["Current talents profile"] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Open the quick talents switch panel.\n|cFFC79C6EShift+Left-Click: |cFF33FF99Open the quick PvP talents switch panel.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6EShift+Left-Click: |cFF33FF99Open the quick talents switch panel.\n|cFFC79C6EControl+Left-Click: |cFF33FF99Open the quick PvP talents switch panel.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 
