@@ -116,6 +116,8 @@ L["Enter the new name of the profile %s. It will enable the button next to this 
 L["Rename the profile %s to %s."] = true;
 L["Chat filter"] = true;
 L["With this enabled it will hide the talents learning/unlearning messages from your chat."] = true;
+L["Switch talents with tooltip"] = true;
+L["Enable this to use the tooltip to switch between your talents profiles."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;
@@ -124,10 +126,11 @@ L["Current loot specialization"] = true;
 L["Dual specialization mode is enabled"] = true;
 L["Switch to"] = true;
 L["With equipment set"] = true;
-L["And loot specialization"] = true;
+L["With loot specialization"] = true;
 L["Pet specializations switch"] = true;
 L["You have %d %s in your bank."] = true;
 L["Current talents profile"] = true;
+L["Talents profiles switch"] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Open the quick talents switch panel.\n|cFFC79C6EShift+Left-Click: |cFF33FF99Open the quick PvP talents switch panel.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Dual specialization switch.\n|cFFC79C6EShift+Left-Click: |cFF33FF99Open the quick talents switch panel.\n|cFFC79C6EControl+Left-Click: |cFF33FF99Open the quick PvP talents switch panel.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;
 

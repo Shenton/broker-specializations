@@ -161,9 +161,19 @@ function A:ConfigurationPanel()
                                 set = function() A.db.profile.switchTooltip = not A.db.profile.switchTooltip; end,
                                 get = function() return A.db.profile.switchTooltip; end,
                             },
-                            informations =
+                            talentsSwitchTootip =
                             {
                                 order = 1,
+                                name = L["Switch talents with tooltip"],
+                                desc = L["Enable this to use the tooltip to switch between your talents profiles."],
+                                type = "toggle",
+                                width = "double",
+                                set = function() A.db.profile.talentsSwitchTooltip = not A.db.profile.talentsSwitchTooltip; end,
+                                get = function() return A.db.profile.talentsSwitchTooltip; end,
+                            },
+                            informations =
+                            {
+                                order = 2,
                                 name = L["Informations"],
                                 desc = L["Add some informations to the tooltip."],
                                 type = "toggle",
@@ -422,7 +432,7 @@ function A:ConfigurationPanel()
          configPanel.args.talentsProfiles.args[tostring(k)] =
          {
             order = groupOrder,
-            name = tostring(k.." ("..v.specName..")"),
+            name = tostring(k.." (|T"..v.specIcon..":16:16:0:0|t"..v.specName..")"),
             type = "group",
             inline = true,
             args =

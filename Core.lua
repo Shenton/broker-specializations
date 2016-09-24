@@ -1305,17 +1305,19 @@ local function DropdownMenu(self, level)
         info.func = function() A:AddTalentsProfilePopup(); end;
         UIDropDownMenu_AddButton(info, level);
 
-        -- Talents profile (menu)
-        info.text = L["Profiles"];
-        info.value = "TALENTSPROFILES";
-        info.keepShownOnClick = 1;
-        info.hasArrow = 1;
-        if ( A:GotTalentsProfile() ) then
-            info.disabled = nil;
-        else
-            info.disabled = 1;
+        if ( not A.db.profile.talentsSwitchTooltip ) then
+            -- Talents profile (menu)
+            info.text = L["Profiles"];
+            info.value = "TALENTSPROFILES";
+            info.keepShownOnClick = 1;
+            info.hasArrow = 1;
+            if ( A:GotTalentsProfile() ) then
+                info.disabled = nil;
+            else
+                info.disabled = 1;
+            end
+            UIDropDownMenu_AddButton(info, level);
         end
-        UIDropDownMenu_AddButton(info, level);
 
         -- Separator
         info.text = "";
@@ -1559,6 +1561,33 @@ function A:Tooltip(anchorFrame)
         tip:AddLine(" ");
     end
 
+    if ( A.db.profile.talentsSwitchTooltip and A:GotTalentsProfile() ) then
+        line = tip:AddLine();
+        tip:SetCell(line, 1, A.color["GREEN"]..L["Talents profiles switch"], nil, nil, 2);
+
+        local currentSpecID = select(2, A:GetCurrentSpecInfos());
+        local currentTalentsProfile = A:GetCurrentUsedTalentsProfile();
+        local disabled;
+
+        for k,v in A:PairsByKeys(A.db.profile.talentsProfiles) do
+            if ( v.specialization == currentSpecID ) then
+                line = tip:AddLine();
+
+                if ( k == currentTalentsProfile ) then
+                    tip:SetCell(line, 1, A.color["POOR"]..k, nil, nil, 2);
+                else
+                    tip:SetCell(line, 1, A.color["PRIEST"]..k, nil, nil, 2);
+                    tip:SetCellScript(line, 1, "OnMouseUp", function()
+                        A:SetTalentsProfile(k);
+                        A:HideTooltip();
+                    end);
+                end
+            end
+        end
+
+        tip:AddLine(" ");
+    end
+
     if ( not A.db.profile.switchTooltip or (A.db.profile.tooltipInfos and A.db.profile.switchTooltip) ) then
         local _, _, specName, specIcon = A:GetCurrentSpecInfos();
         local _, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
@@ -1583,7 +1612,7 @@ function A:Tooltip(anchorFrame)
                 tip:AddLine(L["With equipment set"], "|T"..gearIcon..":16:16:0:0|t"..A.color["PRIEST"]..gearSet);
             end
             if ( A.db.profile.switchLootWithSpec ) then
-                tip:AddLine(L["And loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
+                tip:AddLine(L["With loot specialization"], "|T"..lootSpecIcon..":16:16:0:0|t"..A.color["PRIEST"]..lootSpecText);
             end
             tip:AddLine(" ");
         end
@@ -1629,6 +1658,7 @@ A.aceDefaultDB =
         talentsProfiles = {},
         chatFilter = nil,
         playerClass = "";
+        talentsSwitchTooltip = nil,
     },
 };
 
@@ -1840,7 +1870,7 @@ function A:OnEnable()
             A:Tooltip(self);
         end,
         OnLeave = function(self)
-            if ( A.db.profile.switchTooltip ) then return; end
+            if ( A.db.profile.switchTooltip or A.db.profile.talentsSwitchTooltip ) then return; end
 
             A.tip:Release(self.brokerSpecializationsTooltip);
             self.brokerSpecializationsTooltip = nil;
