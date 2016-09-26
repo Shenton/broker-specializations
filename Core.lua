@@ -23,7 +23,8 @@
 -- GLOBALS: ERR_LEARN_SPELL_S, ERR_PET_LEARN_ABILITY_S, ERR_PET_LEARN_SPELL_S, ERR_PET_SPELL_UNLEARNED_S
 -- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
 -- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture, GetPvpTalentInfo
--- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass
+-- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass, StaticPopup_Resize
+-- GLOBALS: IsControlKeyDown
 
 --[[-------------------------------------------------------------------------------
     Global to local
@@ -1489,7 +1490,7 @@ local function DropdownMenu(self, level)
 end
 
 --[[-------------------------------------------------------------------------------
-    Tooltips
+    Tooltip
 -------------------------------------------------------------------------------]]--
 
 function A:HideTooltip()
@@ -1511,6 +1512,13 @@ function A:RefreshTooltip()
 end
 
 function A:Tooltip(anchorFrame)
+    if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
+        local tip = A.tip:Acquire("BrokerSpecializationsTooltip");
+
+        tip:Release();
+        tip = nil;
+    end
+
     local tip = A.tip:Acquire("BrokerSpecializationsTooltip", 2, "LEFT", "LEFT");
     local line;
     tip.brokerSpecializationsAnchorFrame = anchorFrame;
@@ -1627,6 +1635,7 @@ function A:Tooltip(anchorFrame)
     end
 
     tip:SmartAnchorTo(anchorFrame);
+    tip:SetAutoHideDelay(0.01, anchorFrame);
     tip:Show();
 end
 
