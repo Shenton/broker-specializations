@@ -435,6 +435,7 @@ end
 function A:SetGearAndLootAfterSwitch()
     if ( A.inCombat ) then
         A.setGearAndLootAfterSwitchDelayed = 1;
+        return;
     end
 
     local _, specID = A:GetCurrentSpecInfos();
@@ -1743,6 +1744,12 @@ function A:PLAYER_ENTERING_WORLD()
 end
 
 function A:PLAYER_SPECIALIZATION_CHANGED()
+    -- This is to handle the case when the player got a new pvp talent in combat
+    if ( A.inCombat ) then
+        A.playerSpecializationChangedDelayed = 1;
+        return;
+    end
+
     local oldSpec = A.currentSpec;
 
     A.currentSpec = GetSpecialization();
@@ -1783,8 +1790,13 @@ end
 
 function A:PLAYER_REGEN_ENABLED()
     if ( A.setGearAndLootAfterSwitchDelayed ) then
-        A:SetGearAndLootAfterSwitchDelayed();
+        A:SetGearAndLootAfterSwitch();
         A.setGearAndLootAfterSwitchDelayed = nil;
+    end
+
+    if ( A.playerSpecializationChangedDelayed ) then
+        A:PLAYER_SPECIALIZATION_CHANGED();
+        A.playerSpecializationChangedDelayed = nil;
     end
 
     A.inCombat = nil;
