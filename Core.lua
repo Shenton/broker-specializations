@@ -624,7 +624,7 @@ end
 -------------------------------------------------------------------------------]]--
 
 --- Get the Data Broker text
-function A:GetDataBrokerText(name)
+function A:GetDataBrokerText(name, gearSet)
     local text = "";
 
     if ( A.db.profile.showSpecName ) then
@@ -655,7 +655,13 @@ function A:GetDataBrokerText(name)
     end
 
     if ( A.db.profile.showGearSet ) then
-        local gearSet, gearIcon = A:GetCurrentGearSet();
+        local gearIcon;
+
+        if ( not gearSet ) then
+            gearSet, gearIcon = A:GetGearSetInfos(gearSet);
+        else
+            gearIcon = select(2, A:GetGearSetInfos(gearSet));
+        end
 
         if ( A.db.profile.brokerShortText ) then
             text = text ~= "" and text.."/";
@@ -697,10 +703,10 @@ function A:GetDataBrokerText(name)
 end
 
 --- Update the LDB button and icon
-function A:UpdateBroker()
+function A:UpdateBroker(gearSet)
     local _, _, name, icon = A:GetCurrentSpecInfos();
 
-    A.ldb.text = A:GetDataBrokerText(name);
+    A.ldb.text = A:GetDataBrokerText(name, gearSet);
     A.ldb.icon = icon;
 end
 
@@ -1871,6 +1877,10 @@ function A:BAG_UPDATE()
     end
 end
 
+function A:EQUIPMENT_SWAP_FINISHED(event, success, set)
+    A:UpdateBroker(set);
+end
+
 --[[-------------------------------------------------------------------------------
     Ace3 Init
 -------------------------------------------------------------------------------]]--
@@ -1967,6 +1977,7 @@ function A:OnEnable()
     A:RegisterEvent("PLAYER_REGEN_ENABLED");
     A:RegisterEvent("BAG_UPDATE");
     A:RegisterEvent("PET_SPECIALIZATION_CHANGED");
+    A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
 
     -- Add the config loader to blizzard addon configuration panel
     A:AddToBlizzTemp();
