@@ -104,6 +104,8 @@ A.color =
 
 A.questionMark = "Interface\\ICONS\\INV_Misc_QuestionMark";
 A.lootBagIcon = "Interface\\ICONS\\INV_Misc_Bag_10_Green";
+A.profileIcon = "Interface\\ICONS\\Ability_Marksmanship"; -- Achievement_BG_returnXflags_def_WSG
+A.gearSetIcon = "Interface\\PaperDollInfoFrame\\UI-EquipmentManager-Toggle";
 
 A.showLootSpecModes =
 {
@@ -587,6 +589,8 @@ function A:GetCurrentGearSet()
             name, icon, _, current = GetEquipmentSetInfo(i);
 
             if ( current ) then
+                icon = icon or A.questionMark;
+
                 return name, icon;
             end
         end
@@ -623,26 +627,70 @@ end
 function A:GetDataBrokerText(name)
     local text = "";
 
-    if ( not name ) then
-        name = select(3, A:GetCurrentSpecInfos());
-    end
-
     if ( A.db.profile.showSpecName ) then
-        text = name;
+        text = name or select(3, A:GetCurrentSpecInfos());
     end
 
     if ( A.db.profile.showLootSpec ) then
-        local _, specName, _, textIcon = A:GetCurrentLootSpecInfos();
+        local _, specName, _, specIcon = A:GetCurrentLootSpecInfos();
 
-        if ( text ~= "" ) then
-            text = text.." ";
+        if ( A.db.profile.brokerShortText ) then
+            text = text ~= "" and text.."/";
+        else
+            text = text ~= "" and text.." ";
         end
 
         if ( A.db.profile.showLootSpecTextMode == "text" ) then
-            text = text.."("..(A.db.profile.showLootSpecBagIcon and "|T"..A.lootBagIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t " or "")..specName..")";
+            text = text..
+            (A.db.profile.brokerShortText and "" or "(")..
+            (A.db.profile.showLootSpecBagIcon and "|T"..A.lootBagIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t " or "")..
+            specName..
+            (A.db.profile.brokerShortText and "" or ")");
         else
-            text = text.."(|T"..textIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t)";
+            text = text..
+            (A.db.profile.brokerShortText and "" or "(")..
+            "|T"..specIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t"..
+            (A.db.profile.brokerShortText and "" or ")");
         end
+    end
+
+    if ( A.db.profile.showGearSet ) then
+        local gearSet, gearIcon = A:GetCurrentGearSet();
+
+        if ( A.db.profile.brokerShortText ) then
+            text = text ~= "" and text.."/";
+        else
+            text = text ~= "" and text.." ";
+        end
+
+        if ( A.db.profile.showGearSetTextMode == "text" ) then
+            text = text..
+            (A.db.profile.brokerShortText and "" or "(")..
+            (A.db.profile.showGearSetArmorIcon and "|T"..A.gearSetIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t " or "")..
+            gearSet..
+            (A.db.profile.brokerShortText and "" or ")");
+        else
+            text = text..
+            (A.db.profile.brokerShortText and "" or "(")..
+            "|T"..gearIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t"..
+            (A.db.profile.brokerShortText and "" or ")");
+        end
+    end
+
+    if ( A.db.profile.showTalentProfileName ) then
+        local currentTalentsProfile = A:GetCurrentUsedTalentsProfile() or L["None"];
+
+        if ( A.db.profile.brokerShortText ) then
+            text = text ~= "" and text.."/";
+        else
+            text = text ~= "" and text.." ";
+        end
+
+        text = text..
+        (A.db.profile.brokerShortText and "" or "(")..
+        (A.db.profile.showTalentProfileIcon and "|T"..A.profileIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t " or "")..
+        currentTalentsProfile..
+        (A.db.profile.brokerShortText and "" or ")");
     end
 
     return text;
@@ -1597,7 +1645,8 @@ function A:Tooltip(anchorFrame)
         tip:AddLine(" ");
     end
 
-    if ( not A.db.profile.switchTooltip or (A.db.profile.tooltipInfos and A.db.profile.switchTooltip) ) then
+    if ( (not A.db.profile.switchTooltip or (A.db.profile.tooltipInfos and A.db.profile.switchTooltip))
+    and (not A.db.profile.talentsSwitchTooltip or (A.db.profile.tooltipInfos and A.db.profile.talentsSwitchTooltip)) )then
         local _, _, specName, specIcon = A:GetCurrentSpecInfos();
         local _, _, lootSpecText, lootSpecIcon = A:GetCurrentLootSpecInfos();
         local gearSet, gearIcon = A:GetCurrentGearSet();
@@ -1669,6 +1718,12 @@ A.aceDefaultDB =
         chatFilter = nil,
         playerClass = "";
         talentsSwitchTooltip = nil,
+        showGearSet = nil,
+        showGearSetTextMode = "text",
+        showGearSetArmorIcon = 1,
+        showTalentProfileName = nil,
+        showTalentProfileIcon = 1,
+        brokerShortText = nil,
     },
 };
 

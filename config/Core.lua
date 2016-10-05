@@ -209,9 +209,27 @@ function A:ConfigurationPanel()
                         inline = true,
                         args =
                         {
-                            showSpecName =
+                            brokerShortText =
                             {
                                 order = 0,
+                                name = L["Short mode"],
+                                desc = L["This will remove parenthesis and spaces, plus it will separate names or icons with slashes."],
+                                type = "toggle",
+                                set = function()
+                                    A.db.profile.brokerShortText = not A.db.profile.brokerShortText;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.brokerShortText; end,
+                            },
+                            specializationHeader =
+                            {
+                                order = 10,
+                                name = L["Specializations"],
+                                type = "header",
+                            },
+                            showSpecName =
+                            {
+                                order = 11,
                                 name = L["Display name"],
                                 desc = L["Display the current specialization name on the Data Broker display."],
                                 type = "toggle",
@@ -221,16 +239,15 @@ function A:ConfigurationPanel()
                                 end,
                                 get = function() return A.db.profile.showSpecName; end,
                             },
-                            showSpecNameBlankLine =
+                            lootSpecializationHeader =
                             {
-                                order = 1,
-                                name = " ",
-                                width = "full",
-                                type = "description",
+                                order = 100,
+                                name = L["Loot specialization"],
+                                type = "header",
                             },
                             showLootSpec =
                             {
-                                order = 10,
+                                order = 101,
                                 name = L["Display loot specialization"],
                                 desc = L["Display the current loot specialization on the Data Broker display."],
                                 width = "full",
@@ -243,7 +260,7 @@ function A:ConfigurationPanel()
                             },
                             showLootSpecTextMode =
                             {
-                                order = 11,
+                                order = 102,
                                 name = L["Loot specialization mode"],
                                 desc = L["Select in which mode the loot specialization will be displayed. Text or icon."],
                                 disabled = not A.db.profile.showLootSpec,
@@ -257,7 +274,7 @@ function A:ConfigurationPanel()
                             },
                             showLootSpecBagIcon =
                             {
-                                order = 12,
+                                order = 103,
                                 name = L["Display loot bag"],
                                 desc = L["When loot specialization display mode is text, display a bag icon before it."],
                                 disabled = not A.db.profile.showLootSpec or A.db.profile.showLootSpecTextMode == "icon" and true or false,
@@ -268,12 +285,96 @@ function A:ConfigurationPanel()
                                 end,
                                 get = function() return A.db.profile.showLootSpecBagIcon; end,
                             },
-                            lootSpecIconSize =
+                            gearSetHeader =
                             {
-                                order = 13,
-                                name = L["Loot specialization icon size"],
-                                desc = L["Set the loot specialization icon size on the Data Broker display."],
-                                disabled = not A.db.profile.showLootSpec,
+                                order = 200,
+                                name = L["Gear set"],
+                                type = "header",
+                            },
+                            showGearSet =
+                            {
+                                order = 201,
+                                name = L["Display gear set"],
+                                desc = L["Display the current gear set on the Data Broker display."],
+                                width = "full",
+                                type = "toggle",
+                                set = function()
+                                    A.db.profile.showGearSet = not A.db.profile.showGearSet;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.showGearSet; end,
+                            },
+                            showGearSetTextMode =
+                            {
+                                order = 202,
+                                name = L["Gear set mode"],
+                                desc = L["Select in which mode the gear set will be displayed. Text or icon."],
+                                disabled = not A.db.profile.showGearSet,
+                                type = "select",
+                                values = A.showLootSpecModes,
+                                set = function(info, val)
+                                    A.db.profile.showGearSetTextMode = val;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.showGearSetTextMode; end,
+                            },
+                            showGearSetIcon =
+                            {
+                                order = 203,
+                                name = L["Display armor icon"],
+                                desc = L["When gear set display mode is text, display an armor icon before it."],
+                                disabled = not A.db.profile.showGearSet or A.db.profile.showGearSetTextMode == "icon" and true or false,
+                                type = "toggle",
+                                set = function()
+                                    A.db.profile.showGearSetArmorIcon = not A.db.profile.showGearSetArmorIcon;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.showGearSetArmorIcon; end,
+                            },
+                            talentProfileHeader =
+                            {
+                                order = 300,
+                                name = L["Talents profiles"],
+                                type = "header",
+                            },
+                            talentProfile =
+                            {
+                                order = 301,
+                                name = L["Display talents profile"],
+                                desc = L["Display the current talents profile on the Data Broker display."],
+                                --width = "full",
+                                type = "toggle",
+                                set = function()
+                                    A.db.profile.showTalentProfileName = not A.db.profile.showTalentProfileName;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.showTalentProfileName; end,
+                            },
+                            talentProfileIcon =
+                            {
+                                order = 302,
+                                name = L["Display talents icon"],
+                                desc = L["Display the talents icon before the text."],
+                                disabled = not A.db.profile.showTalentProfileName and true or false,
+                                type = "toggle",
+                                set = function()
+                                    A.db.profile.showTalentProfileIcon = not A.db.profile.showTalentProfileIcon;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.showTalentProfileIcon; end,
+                            },
+                            iconSizeHeader =
+                            {
+                                order = 1000,
+                                name = L["Icons size"],
+                                type = "header",
+                            },
+                            iconsSize =
+                            {
+                                order = 1001,
+                                name = L["Icons size"],
+                                desc = L["Set the icons size. This will not alter the current specialization icon."],
+                                --disabled = not A.db.profile.showLootSpec,
                                 type = "range",
                                 min = 4,
                                 max = 32,
