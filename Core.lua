@@ -41,6 +41,7 @@ local pairs = pairs;
 local tostring = tostring;
 local tinsert = tinsert;
 local tremove = tremove;
+local time = time;
 
 --[[-------------------------------------------------------------------------------
     Libs & addon global
@@ -634,11 +635,7 @@ function A:GetDataBrokerText(name, gearSet)
     if ( A.db.profile.showLootSpec ) then
         local _, specName, _, specIcon = A:GetCurrentLootSpecInfos();
 
-        if ( A.db.profile.brokerShortText ) then
-            text = text ~= "" and text.."/";
-        else
-            text = text ~= "" and text.." ";
-        end
+        text = A.db.profile.brokerShortText and text.."/" or text.." ";
 
         if ( A.db.profile.showLootSpecTextMode == "text" ) then
             text = text..
@@ -658,16 +655,12 @@ function A:GetDataBrokerText(name, gearSet)
         local gearIcon;
 
         if ( not gearSet ) then
-            gearSet, gearIcon = A:GetGearSetInfos(gearSet);
+            gearSet, gearIcon = A:GetCurrentGearSet();
         else
             gearIcon = select(2, A:GetGearSetInfos(gearSet));
         end
 
-        if ( A.db.profile.brokerShortText ) then
-            text = text ~= "" and text.."/";
-        else
-            text = text ~= "" and text.." ";
-        end
+        text = A.db.profile.brokerShortText and text.."/" or text.." ";
 
         if ( A.db.profile.showGearSetTextMode == "text" ) then
             text = text..
@@ -686,11 +679,7 @@ function A:GetDataBrokerText(name, gearSet)
     if ( A.db.profile.showTalentProfileName ) then
         local currentTalentsProfile = A:GetCurrentUsedTalentsProfile() or L["None"];
 
-        if ( A.db.profile.brokerShortText ) then
-            text = text ~= "" and text.."/";
-        else
-            text = text ~= "" and text.." ";
-        end
+        text = A.db.profile.brokerShortText and text.."/" or text.." ";
 
         text = text..
         (A.db.profile.brokerShortText and "" or "(")..
@@ -703,7 +692,11 @@ function A:GetDataBrokerText(name, gearSet)
 end
 
 --- Update the LDB button and icon
-function A:UpdateBroker(gearSet)
+function A:UpdateBroker(gearSet, force)
+    if ( not force and A.brokerIsInUpdate == time() ) then return; end
+
+    A.brokerIsInUpdate = time();
+
     local _, _, name, icon = A:GetCurrentSpecInfos();
 
     A.ldb.text = A:GetDataBrokerText(name, gearSet);
@@ -1839,6 +1832,7 @@ end
 
 function A:EQUIPMENT_SETS_CHANGED()
     A:SetGearSetsDatabase();
+    A:UpdateBroker();
 end
 
 function A:PLAYER_REGEN_DISABLED()
@@ -1878,7 +1872,11 @@ function A:BAG_UPDATE()
 end
 
 function A:EQUIPMENT_SWAP_FINISHED(event, success, set)
-    A:UpdateBroker(set);
+    A:UpdateBroker(set, 1);
+end
+
+function A:PLAYER_EQUIPMENT_CHANGED()
+    A:UpdateBroker();
 end
 
 --[[-------------------------------------------------------------------------------
@@ -1978,6 +1976,7 @@ function A:OnEnable()
     A:RegisterEvent("BAG_UPDATE");
     A:RegisterEvent("PET_SPECIALIZATION_CHANGED");
     A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
+    A:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
 
     -- Add the config loader to blizzard addon configuration panel
     A:AddToBlizzTemp();
