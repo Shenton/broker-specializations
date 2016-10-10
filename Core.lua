@@ -455,6 +455,8 @@ function A:SetGearAndLootAfterSwitch()
             SetLootSpecialization(A.db.profile.specOptions[specID].lootSpec);
         end
     end
+
+    --A.playerSpecializationChanged = nil;
 end
 
 --- Will call SetSpecialization() if not in combat
@@ -629,11 +631,17 @@ function A:GetDataBrokerText(name, gearSet)
     local text = "";
 
     if ( A.db.profile.showSpecName ) then
+        name = name or select(3, A:GetCurrentSpecInfos())
+
+        if ( not name ) then return; end
+
         text = name or select(3, A:GetCurrentSpecInfos());
     end
 
     if ( A.db.profile.showLootSpec ) then
         local _, specName, _, specIcon = A:GetCurrentLootSpecInfos();
+
+        if ( not specName or not specIcon ) then return; end
 
         text = A.db.profile.brokerShortText and text.."/" or text.." ";
 
@@ -659,6 +667,8 @@ function A:GetDataBrokerText(name, gearSet)
         else
             gearIcon = select(2, A:GetGearSetInfos(gearSet));
         end
+
+        if ( not gearSet or not gearIcon ) then return; end
 
         text = A.db.profile.brokerShortText and text.."/" or text.." ";
 
@@ -699,6 +709,9 @@ function A:UpdateBroker(gearSet, force)
     A.brokerIsInUpdate = time();
 
     local _, _, name, icon = A:GetCurrentSpecInfos();
+    local text = A:GetDataBrokerText(name, gearSet);
+
+    if ( not text ) then return; end
 
     A.ldb.text = A:GetDataBrokerText(name, gearSet);
     A.ldb.icon = icon;
@@ -1807,22 +1820,33 @@ function A:PLAYER_ENTERING_WORLD()
     A:UnregisterEvent("PLAYER_ENTERING_WORLD");
 end
 
-function A:PLAYER_SPECIALIZATION_CHANGED()
+-- function A:PLAYER_SPECIALIZATION_CHANGED()
+    -- A.playerSpecializationChanged = 1;
+-- end
+
+function A:PLAYER_TALENT_UPDATE()
+    -- Doing specialization stuff here, Hunters seem to get spec info from the server later than other classes
     -- This is to handle the case when the player got a new pvp talent in combat
     if ( A.inCombat ) then
-        A.playerSpecializationChangedDelayed = 1;
+        A.playerTalentUpdateDelayed = 1;
         return;
     end
-
-    local oldSpec = A.currentSpec;
 
     if ( A.talentsFrame:IsShown() ) then
         A:TalentsFrameUpdate();
     end
 
+    local oldSpec = A.currentSpec;
+    A.currentSpec = GetSpecialization();
+
+    --if ( oldSpec ~= A.currentSpec and A.playerSpecializationChanged ) then
     if ( oldSpec ~= A.currentSpec ) then
+        A:SetSpecializationsDatabase();
         A:SetGearAndLootAfterSwitch();
     end
+
+    A:UpdateBroker();
+    A:RefreshTooltip();
 end
 
 function A:PET_SPECIALIZATION_CHANGED()
@@ -1832,7 +1856,7 @@ function A:PET_SPECIALIZATION_CHANGED()
 end
 
 function A:PLAYER_LOOT_SPEC_UPDATED()
-    A:UpdateBroker();
+    A:UpdateBroker(nil, 1);
     A:RefreshTooltip();
 end
 
@@ -1856,9 +1880,9 @@ function A:PLAYER_REGEN_ENABLED()
         A.setGearAndLootAfterSwitchDelayed = nil;
     end
 
-    if ( A.playerSpecializationChangedDelayed ) then
-        A:PLAYER_SPECIALIZATION_CHANGED();
-        A.playerSpecializationChangedDelayed = nil;
+    if ( A.playerTalentUpdateDelayed ) then
+        A:PLAYER_TALENT_UPDATE();
+        A.playerTalentUpdateDelayed = nil;
     end
 
     A.inCombat = nil;
@@ -1885,14 +1909,6 @@ end
 
 function A:PLAYER_EQUIPMENT_CHANGED()
     A:UpdateBroker();
-    A:RefreshTooltip();
-end
-
-function A:PLAYER_TALENT_UPDATE()
-    -- Updating specialization info and broker here, Hunters seem to get spec info from the server later than other classes
-    A.currentSpec = GetSpecialization();
-    A:SetSpecializationsDatabase();
-    A:UpdateBroker(nil, 1); -- This is a needed update, forcing it
     A:RefreshTooltip();
 end
 
@@ -1985,7 +2001,7 @@ function A:OnEnable()
 
     -- Events
     A:RegisterEvent("PLAYER_ENTERING_WORLD");
-    A:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
+    --A:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
     A:RegisterEvent("PLAYER_LOOT_SPEC_UPDATED");
     A:RegisterEvent("EQUIPMENT_SETS_CHANGED");
     A:RegisterEvent("PLAYER_REGEN_DISABLED");
