@@ -693,6 +693,7 @@ end
 
 --- Update the LDB button and icon
 function A:UpdateBroker(gearSet, force)
+    if ( A.noBrokerUpdate ) then return; end
     if ( not force and A.brokerIsInUpdate == time() ) then return; end
 
     A.brokerIsInUpdate = time();
@@ -1171,11 +1172,18 @@ end
 function A:SetTalentsBrute(name)
     if ( A.inCombat ) then return; end
 
+    A.noBrokerUpdate = 1;
+
     if ( A.db.profile.talentsProfiles[name] and A.db.profile.talentsProfiles[name].talents ) then
         for k,v in pairs(A.db.profile.talentsProfiles[name].talents) do
             A:LearnTalent(v);
         end
     end
+
+    A:UpdateBroker();
+    A:RefreshTooltip();
+    A.noBrokerUpdate = nil;
+    
 end
 
 --- This will return true if we got at least 1 talent profile for the current spec
@@ -1551,6 +1559,8 @@ function A:HideTooltip()
 end
 
 function A:RefreshTooltip()
+    if ( A.noBrokerUpdate ) then return; end
+
     if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
         local tip = A.tip:Acquire("BrokerSpecializationsTooltip");
 
@@ -1806,11 +1816,6 @@ function A:PLAYER_SPECIALIZATION_CHANGED()
 
     local oldSpec = A.currentSpec;
 
-    A.currentSpec = GetSpecialization();
-    A:SetSpecializationsDatabase();
-    A:UpdateBroker();
-    A:RefreshTooltip();
-
     if ( A.talentsFrame:IsShown() ) then
         A:TalentsFrameUpdate();
     end
@@ -1828,11 +1833,13 @@ end
 
 function A:PLAYER_LOOT_SPEC_UPDATED()
     A:UpdateBroker();
+    A:RefreshTooltip();
 end
 
 function A:EQUIPMENT_SETS_CHANGED()
     A:SetGearSetsDatabase();
     A:UpdateBroker();
+    A:RefreshTooltip();
 end
 
 function A:PLAYER_REGEN_DISABLED()
@@ -1873,10 +1880,20 @@ end
 
 function A:EQUIPMENT_SWAP_FINISHED(event, success, set)
     A:UpdateBroker(set, 1);
+    A:RefreshTooltip();
 end
 
 function A:PLAYER_EQUIPMENT_CHANGED()
     A:UpdateBroker();
+    A:RefreshTooltip();
+end
+
+function A:PLAYER_TALENT_UPDATE()
+    -- Updating specialization info and broker here, Hunters seem to get spec info from the server later than other classes
+    A.currentSpec = GetSpecialization();
+    A:SetSpecializationsDatabase();
+    A:UpdateBroker(nil, 1); -- This is a needed update, forcing it
+    A:RefreshTooltip();
 end
 
 --[[-------------------------------------------------------------------------------
@@ -1977,6 +1994,7 @@ function A:OnEnable()
     A:RegisterEvent("PET_SPECIALIZATION_CHANGED");
     A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
     A:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+    A:RegisterEvent("PLAYER_TALENT_UPDATE");
 
     -- Add the config loader to blizzard addon configuration panel
     A:AddToBlizzTemp();
