@@ -425,7 +425,7 @@ function A:GetCurrentLootSpecInfos()
     if ( lootSpec == 0 ) then
         local _, ID, name, icon = A:GetCurrentSpecInfos();
 
-        return ID, name, L["Current specialization ( %s )"]:format(name), icon;
+        return ID, name, L["Current specialization ( %s )"]:format(name or L["None"]), icon;
     else
         local _, ID, name, icon = A:GetSpecInfosByID(lootSpec);
 
