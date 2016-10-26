@@ -1,9 +1,9 @@
-## Interface: 70000
+## Interface: 70100
 ## Title: Broker Specializations
 ## Notes: A Data Broker add-on for quickly switching your specialization with gear set and loot specialization.
 ## Author: Shenton
 ## SavedVariables: brokerSpecializationsDB
-## Version: 1.1.6
+## Version: 1.1.7
 ## OptionalDeps: Ace3, LibDBIcon-1.0
 
 #@no-lib-strip@

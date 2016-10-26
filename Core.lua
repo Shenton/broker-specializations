@@ -455,8 +455,6 @@ function A:SetGearAndLootAfterSwitch()
             SetLootSpecialization(A.db.profile.specOptions[specID].lootSpec);
         end
     end
-
-    --A.playerSpecializationChanged = nil;
 end
 
 --- Will call SetSpecialization() if not in combat
@@ -1820,10 +1818,6 @@ function A:PLAYER_ENTERING_WORLD()
     A:UnregisterEvent("PLAYER_ENTERING_WORLD");
 end
 
--- function A:PLAYER_SPECIALIZATION_CHANGED()
-    -- A.playerSpecializationChanged = 1;
--- end
-
 function A:PLAYER_TALENT_UPDATE()
     -- Doing specialization stuff here, Hunters seem to get spec info from the server later than other classes
     -- This is to handle the case when the player got a new pvp talent in combat
@@ -1839,7 +1833,6 @@ function A:PLAYER_TALENT_UPDATE()
     local oldSpec = A.currentSpec;
     A.currentSpec = GetSpecialization();
 
-    --if ( oldSpec ~= A.currentSpec and A.playerSpecializationChanged ) then
     if ( oldSpec ~= A.currentSpec ) then
         A:SetSpecializationsDatabase();
         A:SetGearAndLootAfterSwitch();
@@ -2001,7 +1994,6 @@ function A:OnEnable()
 
     -- Events
     A:RegisterEvent("PLAYER_ENTERING_WORLD");
-    --A:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
     A:RegisterEvent("PLAYER_LOOT_SPEC_UPDATED");
     A:RegisterEvent("EQUIPMENT_SETS_CHANGED");
     A:RegisterEvent("PLAYER_REGEN_DISABLED");
