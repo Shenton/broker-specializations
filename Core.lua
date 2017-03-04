@@ -303,6 +303,14 @@ function A:CompareTables(t1, t2)
     return 1;
 end
 
+--- Replace a character in a string
+-- @param pos TRhe position of the character to replace
+-- @param str The string
+-- @param r The character
+function A:ReplaceChar(pos, str, r)
+    return ("%s%s%s"):format(str:sub(1,pos-1), r, str:sub(pos+1))
+end
+
 --- Check and clean the database
 -- Added to prevent the player from using a copied profile from another class
 function A:CleanupDatabase()
@@ -332,6 +340,8 @@ function A:SetEverything()
 
     A.currentSpec = GetSpecialization();
     A:SetSpecializationsDatabase();
+
+    A.currentTalents = A:GetTalentsString();
 
     if ( A.playerClass == "HUNTER" ) then
         A.currentPetSpec = GetSpecialization(false, true);
@@ -629,7 +639,7 @@ function A:GetDataBrokerText(name, gearSet)
     local text = "";
 
     if ( A.db.profile.showSpecName ) then
-        name = name or select(3, A:GetCurrentSpecInfos())
+        name = name or select(3, A:GetCurrentSpecInfos());
 
         if ( not name ) then return; end
 
@@ -700,12 +710,7 @@ function A:GetDataBrokerText(name, gearSet)
 end
 
 --- Update the LDB button and icon
-function A:UpdateBroker(gearSet, force)
-    if ( A.noBrokerUpdate ) then return; end
-    if ( not force and A.brokerIsInUpdate == time() ) then return; end
-
-    A.brokerIsInUpdate = time();
-
+function A:UpdateBroker()
     local _, _, name, icon = A:GetCurrentSpecInfos();
     local text = A:GetDataBrokerText(name, gearSet);
 
@@ -1152,6 +1157,7 @@ function A:AddTalentsProfile(name)
         specName = specName,
         specIcon = specIcon,
         talents = A:GetTalentsSnapshot(),
+        string = A:GetTalentsString(),
     };
 end
 
@@ -1176,14 +1182,29 @@ function A:GetTalentsSnapshot()
     return tbl;
 end
 
+function A:GetTalentsString()
+    local talentGroup = GetActiveSpecGroup(false);
+    local str = "";
+
+    for i=1,7 do
+        for j=1,3 do
+            local talentID, _, _, selected = GetTalentInfo(i, j, talentGroup, false);
+
+            if ( selected ) then
+                str = str..tostring(j);
+            end
+        end
+    end
+
+    return str;
+end
+
 function A:SetTalentsProfile(name)
     A:SetTalentsBrute(name);
 end
 
 function A:SetTalentsBrute(name)
     if ( A.inCombat ) then return; end
-
-    A.noBrokerUpdate = 1;
 
     if ( A.db.profile.talentsProfiles[name] and A.db.profile.talentsProfiles[name].talents ) then
         for k,v in pairs(A.db.profile.talentsProfiles[name].talents) do
@@ -1193,8 +1214,6 @@ function A:SetTalentsBrute(name)
 
     A:UpdateBroker();
     A:RefreshTooltip();
-    A.noBrokerUpdate = nil;
-    
 end
 
 --- This will return true if we got at least 1 talent profile for the current spec
@@ -1213,13 +1232,10 @@ end
 --- Get current used talents profile
 function A:GetCurrentUsedTalentsProfile()
     local currentSpecID = select(2, A:GetCurrentSpecInfos());
-    local currentTalentsSnapshot = A:GetTalentsSnapshot();
 
     for k,v in pairs(A.db.profile.talentsProfiles) do
-        if ( v.specialization == currentSpecID ) then
-            if ( A:CompareTables(v.talents, currentTalentsSnapshot) ) then
-                return k;
-            end
+        if ( v.specialization == currentSpecID and A.currentTalents == v.string ) then
+            return k;
         end
     end
 
@@ -1570,8 +1586,6 @@ function A:HideTooltip()
 end
 
 function A:RefreshTooltip()
-    if ( A.noBrokerUpdate ) then return; end
-
     if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
         local tip = A.tip:Acquire("BrokerSpecializationsTooltip");
 
@@ -1815,6 +1829,7 @@ end
 
 function A:PLAYER_ENTERING_WORLD()
     A:SetEverything();
+    A:SetTalentsProfilesStrings();
     A:UnregisterEvent("PLAYER_ENTERING_WORLD");
 end
 
@@ -1838,6 +1853,8 @@ function A:PLAYER_TALENT_UPDATE()
         A:SetGearAndLootAfterSwitch();
     end
 
+    A.currentTalents = A:GetTalentsString();
+
     A:UpdateBroker();
     A:RefreshTooltip();
 end
@@ -1849,7 +1866,7 @@ function A:PET_SPECIALIZATION_CHANGED()
 end
 
 function A:PLAYER_LOOT_SPEC_UPDATED()
-    A:UpdateBroker(nil, 1);
+    A:UpdateBroker();
     A:RefreshTooltip();
 end
 
@@ -1896,13 +1913,34 @@ function A:BAG_UPDATE()
 end
 
 function A:EQUIPMENT_SWAP_FINISHED(event, success, set)
-    A:UpdateBroker(set, 1);
+    A:UpdateBroker();
     A:RefreshTooltip();
 end
 
 function A:PLAYER_EQUIPMENT_CHANGED()
     A:UpdateBroker();
     A:RefreshTooltip();
+end
+
+--[[-------------------------------------------------------------------------------
+    Database fixes
+-------------------------------------------------------------------------------]]--
+
+--- This will create the talents profiles strings if they are missing
+function A:SetTalentsProfilesStrings()
+    for k,v in pairs(A.db.profile.talentsProfiles) do
+        if ( not v.string ) then
+            local str = "0000000";
+
+            for kk,vv in ipairs(v.talents) do
+                local _, _, _, _, _, _, _, row, column = GetTalentInfoByID(vv);
+
+                str = A:ReplaceChar(row, str, column);
+            end
+
+            v.string = str;
+        end
+    end
 end
 
 --[[-------------------------------------------------------------------------------
