@@ -642,7 +642,7 @@ function A:GetDataBrokerText(name)
         if ( A.db.profile.brokerShortNames ) then
             local specID = select(2, A:GetCurrentSpecInfos());
 
-            name = L[tostring(specID)] or name or select(3, A:GetCurrentSpecInfos());
+            name = A.db.profile.specOptions[specID].shortName or L[tostring(specID)] or name or select(3, A:GetCurrentSpecInfos());
         else
             name = name or select(3, A:GetCurrentSpecInfos());
         end
@@ -656,7 +656,7 @@ function A:GetDataBrokerText(name)
         local specID, specName, _, specIcon = A:GetCurrentLootSpecInfos();
 
         if ( A.db.profile.brokerShortNames ) then
-            specName = L[tostring(specID)] or specName;
+            specName = A.db.profile.specOptions[specID].shortName or L[tostring(specID)] or specName;
         end
 
         if ( not specName or not specIcon ) then return; end
@@ -1106,18 +1106,9 @@ StaticPopupDialogs["BROKERSPECIALIZATIONS_ADD_TALENTS_PROFILE"] = {
         name = tostring(name);
 
         if ( name ~= "" ) then
-            if ( string.match(name, "^%w+$") ) then
-                self:GetParent().button1:Enable();
-                self:GetParent().text:SetText(L["Enter the name of your talents profile."]);
-            else
-                self:GetParent().button1:Disable();
-                self:GetParent().text:SetText(A.color["RED"]..L["The talents profile name should contains aplhanumeric characters only."]);
-                StaticPopup_Resize(self:GetParent(), "BROKERSPECIALIZATIONS_ADD_TALENTS_PROFILE"); -- Useful only here, it will not resize when reverting to the default text
-            end
-            
+            self:GetParent().button1:Enable();
         else
             self:GetParent().button1:Disable();
-            self:GetParent().text:SetText(L["Enter the name of your talents profile."]);
         end
     end,
     OnAccept = function(self)
@@ -1140,11 +1131,6 @@ function A:AddTalentsProfile(name)
 
     if ( name == "" ) then
         A:Message(L["The talents profile name is empty."], 1);
-        return;
-    end
-
-    if ( not string.match(name, "^%w+$") ) then
-        A:Message(L["The talents profile name should contains aplhanumeric characters only."], 1);
         return;
     end
 

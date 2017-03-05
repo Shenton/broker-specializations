@@ -183,6 +183,14 @@ L["This will remove parenthesis and spaces, plus it will separate names or icons
 L["Talents List"] = true;
 L["Short names"] = true;
 L["This will uses short names for specializations."] = true;
+L["Short name"] = true;
+L["Default short name: %s"] = true;
+L["Custom short name: %s"] = true;
+L["Input short name"] = true;
+L["Input here your custom short name, and click Okay."] = true;
+L["Add short name"] = true;
+L["Click here to add your custom specialization short name."] = true;
+L["Reset short name to default"] = true;
 
 -- Tooltip
 L["Current specialization"] = true;

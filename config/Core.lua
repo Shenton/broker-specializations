@@ -34,6 +34,7 @@ local L = A.L;
 
 local profilesRenameTable = {};
 local profilesDeleteTable = {};
+local shortNameInput;
 
 function A:ConfigurationPanel()
     local dualSpecSelectValues = {};
@@ -488,6 +489,76 @@ function A:ConfigurationPanel()
                     {
                     },
                 },
+                shortName =
+                {
+                    order = 200,
+                    name = L["Short name"],
+                    type = "group",
+                    inline = true,
+                    args =
+                    {
+                        info =
+                        {
+                            order = 0,
+                            type = "description",
+                            fontSize = "medium",
+                            width = "full",
+                            name = function()
+                                if ( A.db.profile.specOptions[v.id].shortName ) then
+                                    return L["Default short name: %s"]:format(A.color.RED..L[tostring(v.id)]..A.color.RESET).."\n"..L["Custom short name: %s"]:format(A.color.GREEN..A.db.profile.specOptions[v.id].shortName..A.color.RESET);
+                                else
+                                    return L["Default short name: %s"]:format(A.color.GREEN..L[tostring(v.id)]);
+                                end
+                            end,
+                        },
+                        customInput =
+                        {
+                            order = 100,
+                            type = "input",
+                            name = L["Input short name"],
+                            desc = L["Input here your custom short name, and click Okay."],
+                            get = function() return A.db.profile.specOptions[v.id].shortName; end,
+                            set = function(info, val) shortNameInput = val; end,
+                        },
+                        customExecute =
+                        {
+                            order = 101,
+                            type = "execute",
+                            name = function()
+                                if ( shortNameInput ) then
+                                    return L["Add"].." : "..shortNameInput;
+                                else
+                                    return L["Add short name"];
+                                end
+                            end,
+                            disabled = not shortNameInput,
+                            desc = L["Click here to add your custom specialization short name."],
+                            func = function()
+                                if ( shortNameInput ) then
+                                    if ( shortNameInput ~= "" ) then
+                                        A.db.profile.specOptions[v.id].shortName = shortNameInput;
+                                        A:UpdateBroker();
+                                        A:RefreshTooltip();
+                                    end
+                                    shortNameInput = nil;
+                                end
+                            end,
+                        },
+                        reset =
+                        {
+                            order = 102,
+                            type = "execute",
+                            width = "full",
+                            name = L["Reset short name to default"],
+                            disabled = not A.db.profile.specOptions[v.id].shortName,
+                            func = function()
+                                A.db.profile.specOptions[v.id].shortName = nil;
+                                A:UpdateBroker();
+                                A:RefreshTooltip();
+                            end,
+                        },
+                    },
+                },
             },
         };
         groupOrder = groupOrder + 1;
@@ -601,6 +672,8 @@ function A:ConfigurationPanel()
                        A:CopyTable(A.db.profile.talentsProfiles[k], A.db.profile.talentsProfiles[profilesRenameTable[k]]);
                        A.db.profile.talentsProfiles[k] = nil;
                        profilesRenameTable[k] = nil;
+                       A:UpdateBroker();
+                       A:RefreshTooltip();
                     end,
                 },
                 deleteHeader =
@@ -632,6 +705,8 @@ function A:ConfigurationPanel()
                     func = function()
                        A.db.profile.talentsProfiles[k] = nil;
                        profilesDeleteTable[k] = nil;
+                       A:UpdateBroker();
+                       A:RefreshTooltip();
                     end,
                 },
             },
