@@ -221,6 +221,18 @@ function A:ConfigurationPanel()
                                 end,
                                 get = function() return A.db.profile.brokerShortText; end,
                             },
+                            brokerShortNames =
+                            {
+                                order = 1,
+                                name = L["Short names"],
+                                desc = L["This will uses short names for specializations."],
+                                type = "toggle",
+                                set = function()
+                                    A.db.profile.brokerShortNames = not A.db.profile.brokerShortNames;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.brokerShortNames; end,
+                            },
                             specializationHeader =
                             {
                                 order = 10,
@@ -529,24 +541,29 @@ function A:ConfigurationPanel()
     groupOrder = 0;
 
     for k,v in A:PairsByKeys(A.db.profile.talentsProfiles) do
-         --configPanel.args.talentsProfiles.args.profiles.args[tostring(k)] =
-         configPanel.args.talentsProfiles.args[tostring(k)] =
-         {
+        configPanel.args.talentsProfiles.args[tostring(k)] =
+        {
             order = groupOrder,
             name = tostring(k.." (|T"..v.specIcon..":16:16:0:0|t"..v.specName..")"),
             type = "group",
             inline = true,
             args =
             {
-                renameHeader =
+                listHeader =
                 {
                     order = 0,
+                    name = L["Talents List"],
+                    type = "header",
+                },
+                renameHeader =
+                {
+                    order = 50,
                     name = L["Rename"],
                     type = "header",
                 },
                 renameProfileInput =
                 {
-                    order = 1,
+                    order = 51,
                     name = L["Rename"],
                     desc = L["Enter the new name of the profile %s. It will enable the button next to this box."]:format(tostring(k));
                     type = "input",
@@ -564,7 +581,7 @@ function A:ConfigurationPanel()
                 },
                 renameProfileExecute =
                 {
-                    order = 2,
+                    order = 52,
                     name = L["Rename"],
                     desc = L["Rename the profile %s to %s."]:format(tostring(k), profilesRenameTable[k] or "");
                     type = "execute",
@@ -618,9 +635,24 @@ function A:ConfigurationPanel()
                     end,
                 },
             },
-         };
+        };
 
-         groupOrder = groupOrder + 1;
+        order = 1;
+        for kk,vv in pairs(v.talents) do
+            local _, name, texture, _, _, spellID, _, row, column = GetTalentInfoByID(vv);
+
+            configPanel.args.talentsProfiles.args[tostring(k)].args["list"..name] =
+            {
+                order = order,
+                type = "execute",
+                name = name.." ("..row.." - "..column..")",
+                desc = GetSpellDescription(spellID),
+                image = texture,
+            }
+            order = order + 1;
+        end
+
+        groupOrder = groupOrder + 1;
     end
 
     -- Ace3 profiles options

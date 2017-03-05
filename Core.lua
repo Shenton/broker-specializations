@@ -24,7 +24,7 @@
 -- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
 -- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture, GetPvpTalentInfo
 -- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass, StaticPopup_Resize
--- GLOBALS: IsControlKeyDown
+-- GLOBALS: IsControlKeyDown, GetTalentInfoByID
 
 --[[-------------------------------------------------------------------------------
     Global to local
@@ -635,11 +635,17 @@ end
 -------------------------------------------------------------------------------]]--
 
 --- Get the Data Broker text
-function A:GetDataBrokerText(name, gearSet)
+function A:GetDataBrokerText(name)
     local text = "";
 
     if ( A.db.profile.showSpecName ) then
-        name = name or select(3, A:GetCurrentSpecInfos());
+        if ( A.db.profile.brokerShortNames ) then
+            local specID = select(2, A:GetCurrentSpecInfos());
+
+            name = L[tostring(specID)] or name or select(3, A:GetCurrentSpecInfos());
+        else
+            name = name or select(3, A:GetCurrentSpecInfos());
+        end
 
         if ( not name ) then return; end
 
@@ -647,7 +653,11 @@ function A:GetDataBrokerText(name, gearSet)
     end
 
     if ( A.db.profile.showLootSpec ) then
-        local _, specName, _, specIcon = A:GetCurrentLootSpecInfos();
+        local specID, specName, _, specIcon = A:GetCurrentLootSpecInfos();
+
+        if ( A.db.profile.brokerShortNames ) then
+            specName = L[tostring(specID)] or specName;
+        end
 
         if ( not specName or not specIcon ) then return; end
 
@@ -668,13 +678,7 @@ function A:GetDataBrokerText(name, gearSet)
     end
 
     if ( A.db.profile.showGearSet ) then
-        local gearIcon;
-
-        if ( not gearSet ) then
-            gearSet, gearIcon = A:GetCurrentGearSet();
-        else
-            gearIcon = select(2, A:GetGearSetInfos(gearSet));
-        end
+        local gearSet, gearIcon = A:GetCurrentGearSet();
 
         if ( not gearSet or not gearIcon ) then return; end
 
@@ -712,11 +716,11 @@ end
 --- Update the LDB button and icon
 function A:UpdateBroker()
     local _, _, name, icon = A:GetCurrentSpecInfos();
-    local text = A:GetDataBrokerText(name, gearSet);
+    local text = A:GetDataBrokerText(name);
 
     if ( not text ) then return; end
 
-    A.ldb.text = A:GetDataBrokerText(name, gearSet);
+    A.ldb.text = text;
     A.ldb.icon = icon;
 end
 
@@ -1758,6 +1762,7 @@ A.aceDefaultDB =
         showTalentProfileName = nil,
         showTalentProfileIcon = 1,
         brokerShortText = nil,
+        brokerShortNames = nil,
     },
 };
 

@@ -76,6 +76,56 @@ L["A class mismatch was detected, your specializations and talents options have 
 L["The talents profile name is empty."] = true;
 L["The talents profile name should contains aplhanumeric characters only."] = true;
 
+-- Short spec names
+-- Death Knight     250 Blood           251 Frost           252 Unholy
+L["250"] = "Blood";
+L["251"] = "Frost";
+L["252"] = "Unh";
+-- Demon Hunter     577 Havoc           581 Vengeance
+L["577"] = "Havoc"
+L["581"] = "Veng";
+-- Druid            102 Balance         103 Feral           104 Guardian        105 Restoration
+L["102"] = "Bal";
+L["103"] = "Feral";
+L["104"] = "Guard";
+L["105"] = "Resto";
+-- Hunter           253 Beast Mastery   254 Marksmanship    255 Survival
+L["253"] = "BM";
+L["254"] = "MM";
+L["255"] = "Surv";
+-- Mage             62  Arcane          63  Fire            64  Frost
+L["62"] = "Arc";
+L["63"] = "Fire";
+L["64"] = "Frost";
+-- Monk             268 Brewmaster      270 Mistweaver      269 Windwalker
+L["268"] = "Brew";
+L["269"] = "Wind";
+L["270"] = "Mist";
+-- Paladin          65  Holy            66  Protection      70  Retribution
+L["65"] = "Holy";
+L["66"] = "Prot";
+L["70"] = "Ret";
+-- Priest           256 Discipline      257 Holy            258 Shadow
+L["256"] = "Disc";
+L["257"] = "Holy";
+L["258"] = "Shadow";
+-- Rogue            259 Assassination   260 Outlaw          261 Subtlety
+L["259"] = "Assa";
+L["260"] = "Out";
+L["261"] = "Sub";
+-- Shaman           262 Elemental       263 Enhancement     264 Restoration
+L["262"] = "Ele";
+L["263"] = "Enh";
+L["264"] = "Resto";
+-- Warlock          265 Affliction      266 Demonology      267 Destruction
+L["265"] = "Affli";
+L["266"] = "Demono";
+L["267"] = "Destro";
+-- Warrior          71  Arms            72  Fury            73  Protection
+L["71"] = "Arms";
+L["72"] = "Fury";
+L["73"] = "Prot";
+
 -- Config
 L["Broker Specializations configuration loader"] = true;
 L["Load configuration"] = true;
@@ -130,6 +180,9 @@ L["Display talents icon"] = true;
 L["Display the talents icon before the text."] = true;
 L["Short mode"] = true;
 L["This will remove parenthesis and spaces, plus it will separate names or icons with slashes."] = true;
+L["Talents List"] = true;
+L["Short names"] = true;
+L["This will uses short names for specializations."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;
