@@ -10,7 +10,7 @@
     FindGlobals
 -------------------------------------------------------------------------------]]--
 
--- GLOBALS: LibStub
+-- GLOBALS: LibStub, GetTalentInfoByID, GetSpellDescription
 
 --[[-------------------------------------------------------------------------------
     Global to local
@@ -460,6 +460,7 @@ function A:ConfigurationPanel()
     };
 
     local groupOrder = 0;
+    local order = 0;
 
     for k,v in ipairs(A.specDB) do
         configPanel.args.specializationsOptions.args["spec"..v.name] =
@@ -563,7 +564,7 @@ function A:ConfigurationPanel()
         };
         groupOrder = groupOrder + 1;
 
-        local order = 0;
+        order = 0;
 
         for _,vv in ipairs(A.gearSetsDB) do
             configPanel.args.specializationsOptions.args["spec"..v.name].args.gearSet.args[order..vv.name] =
