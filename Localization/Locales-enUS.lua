@@ -191,6 +191,8 @@ L["Input here your custom short name, and click Okay."] = true;
 L["Add short name"] = true;
 L["Click here to add your custom specialization short name."] = true;
 L["Reset short name to default"] = true;
+L["Red none"] = true;
+L["This will color in red gear set and talents profile names, if they are displaying \"None\"."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;

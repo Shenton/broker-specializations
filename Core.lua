@@ -686,15 +686,19 @@ function A:GetDataBrokerText(name)
 
         if ( A.db.profile.showGearSetTextMode == "text" ) then
             text = text..
+            ((A.db.profile.brokerRedNone and gearSet == L["None"]) and A.color.RED or "")..
             (A.db.profile.brokerShortText and "" or "(")..
             (A.db.profile.showGearSetArmorIcon and "|T"..A.gearSetIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t " or "")..
             gearSet..
-            (A.db.profile.brokerShortText and "" or ")");
+            (A.db.profile.brokerShortText and "" or ")")..
+            (A.db.profile.brokerRedNone and A.color.RESET or "");
         else
             text = text..
+            ((A.db.profile.brokerRedNone and gearSet == L["None"]) and A.color.RED or "")..
             (A.db.profile.brokerShortText and "" or "(")..
             "|T"..gearIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t"..
-            (A.db.profile.brokerShortText and "" or ")");
+            (A.db.profile.brokerShortText and "" or ")")..
+            (A.db.profile.brokerRedNone and A.color.RESET or "");
         end
     end
 
@@ -704,10 +708,12 @@ function A:GetDataBrokerText(name)
         text = A.db.profile.brokerShortText and text.."/" or text.." ";
 
         text = text..
+        ((A.db.profile.brokerRedNone and currentTalentsProfile == L["None"]) and A.color.RED or "")..
         (A.db.profile.brokerShortText and "" or "(")..
         (A.db.profile.showTalentProfileIcon and "|T"..A.profileIcon..":"..A.db.profile.lootSpecIconSize..":"..A.db.profile.lootSpecIconSize..":0:0|t " or "")..
         currentTalentsProfile..
-        (A.db.profile.brokerShortText and "" or ")");
+        (A.db.profile.brokerShortText and "" or ")")..
+        (A.db.profile.brokerRedNone and A.color.RESET or "");
     end
 
     return text;
@@ -1149,6 +1155,9 @@ function A:AddTalentsProfile(name)
         talents = A:GetTalentsSnapshot(),
         string = A:GetTalentsString(),
     };
+
+    A:UpdateBroker();
+    A:RefreshTooltip();
 end
 
 function A:AddTalentsProfilePopup()
@@ -1749,6 +1758,7 @@ A.aceDefaultDB =
         showTalentProfileIcon = 1,
         brokerShortText = nil,
         brokerShortNames = nil,
+        brokerRedNone = nil,
     },
 };
 

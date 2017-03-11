@@ -234,6 +234,18 @@ function A:ConfigurationPanel()
                                 end,
                                 get = function() return A.db.profile.brokerShortNames; end,
                             },
+                            brokerRedNone =
+                            {
+                                order = 1,
+                                name = L["Red none"],
+                                desc = L["This will colour in red gear set and talents profile names, if they are displaying \"None\"."],
+                                type = "toggle",
+                                set = function()
+                                    A.db.profile.brokerRedNone = not A.db.profile.brokerRedNone;
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return A.db.profile.brokerRedNone; end,
+                            },
                             specializationHeader =
                             {
                                 order = 10,
