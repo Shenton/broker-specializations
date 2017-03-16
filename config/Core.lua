@@ -236,9 +236,9 @@ function A:ConfigurationPanel()
                             },
                             brokerRedNone =
                             {
-                                order = 1,
+                                order = 2,
                                 name = L["Red none"],
-                                desc = L["This will colour in red gear set and talents profile names, if they are displaying \"None\"."],
+                                desc = L["This will color in red gear set and talents profile names, if they are displaying \"None\"."],
                                 type = "toggle",
                                 set = function()
                                     A.db.profile.brokerRedNone = not A.db.profile.brokerRedNone;
