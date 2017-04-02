@@ -136,6 +136,52 @@ A.talentsSwitchBuffs =
     226234, -- codex-of-the-tranquil-mind
 };
 
+A.iconsFileDataToFilePath =
+{
+    [135932] = "Interface/Icons/Spell_Holy_MagicalSentry", -- ID: 62 - Class: MAGE - Spec: Arcane
+    [135810] = "Interface/Icons/Spell_Fire_FireBolt02", -- ID: 63 - Class: MAGE - Spec: Fire
+    [135846] = "Interface/Icons/Spell_Frost_FrostBolt02", -- ID: 64 - Class: MAGE - Spec: Frost
+    [135920] = "Interface/Icons/Spell_Holy_HolyBolt", -- ID: 65 - Class: PALADIN - Spec: Holy
+    [236264] = "Interface/Icons/Ability_Paladin_ShieldoftheTemplar", -- ID: 66 - Class: PALADIN - Spec: Protection
+    [135873] = "Interface/Icons/Spell_Holy_AuraOfLight", -- ID: 70 - Class: PALADIN - Spec: Retribution
+    [132355] = "Interface/Icons/Ability_Warrior_SavageBlow", -- ID: 71 - Class: WARRIOR - Spec: Arms
+    [132347] = "Interface/Icons/Ability_Warrior_InnerRage", -- ID: 72 - Class: WARRIOR - Spec: Fury
+    [132341] = "Interface/Icons/Ability_Warrior_DefensiveStance", -- ID: 73 - Class: WARRIOR - Spec: Protection
+    [236159] = "Interface/Icons/Ability_Druid_KingoftheJungle", -- ID: 74 - Class: Unavailable - Spec: Ferocity
+    [132150] = "Interface/Icons/Ability_EyeOfTheOwl", -- ID: 79 - Class: Unavailable - Spec: Cunning
+    [132121] = "Interface/Icons/ABILITY_DRUID_DEMORALIZINGROAR", -- ID: 81 - Class: Unavailable - Spec: Tenacity
+    [136096] = "Interface/Icons/Spell_Nature_StarFall", -- ID: 102 - Class: DRUID - Spec: Balance
+    [132115] = "Interface/Icons/Ability_Druid_CatForm", -- ID: 103 - Class: DRUID - Spec: Feral
+    [132276] = "Interface/Icons/Ability_Racial_BearForm", -- ID: 104 - Class: DRUID - Spec: Guardian
+    [136041] = "Interface/Icons/SPELL_NATURE_HEALINGTOUCH", -- ID: 105 - Class: DRUID - Spec: Restoration
+    [135770] = "Interface/Icons/Spell_Deathknight_BloodPresence", -- ID: 250 - Class: DEATHKNIGHT - Spec: Blood
+    [135773] = "Interface/Icons/Spell_Deathknight_FrostPresence", -- ID: 251 - Class: DEATHKNIGHT - Spec: Frost
+    [135775] = "Interface/Icons/Spell_Deathknight_UnholyPresence", -- ID: 252 - Class: DEATHKNIGHT - Spec: Unholy
+    [461112] = "Interface/Icons/ABILITY_HUNTER_BESTIALDISCIPLINE", -- ID: 253 - Class: HUNTER - Spec: Beast Mastery
+    [236179] = "Interface/Icons/Ability_Hunter_FocusedAim", -- ID: 254 - Class: HUNTER - Spec: Marksmanship
+    [461113] = "Interface/Icons/Ability_Hunter_Camouflage", -- ID: 255 - Class: HUNTER - Spec: Survival
+    [135940] = "Interface/Icons/Spell_Holy_PowerWordShield", -- ID: 256 - Class: PRIEST - Spec: Discipline
+    [237542] = "Interface/Icons/Spell_Holy_GuardianSpirit", -- ID: 257 - Class: PRIEST - Spec: Holy
+    [136207] = "Interface/Icons/Spell_Shadow_ShadowWordPain", -- ID: 258 - Class: PRIEST - Spec: Shadow
+    [236270] = "Interface/Icons/Ability_Rogue_DeadlyBrew", -- ID: 259 - Class: ROGUE - Spec: Assassination
+    [135340] = "Interface/Icons/INV_Sword_30", -- ID: 260 - Class: ROGUE - Spec: Outlaw
+    [132320] = "Interface/Icons/Ability_Stealth", -- ID: 261 - Class: ROGUE - Spec: Subtlety
+    [136048] = "Interface/Icons/Spell_Nature_Lightning", -- ID: 262 - Class: SHAMAN - Spec: Elemental
+    [237581] = "Interface/Icons/Spell_Shaman_ImprovedStormstrike", -- ID: 263 - Class: SHAMAN - Spec: Enhancement
+    [136052] = "Interface/Icons/Spell_Nature_MagicImmunity", -- ID: 264 - Class: SHAMAN - Spec: Restoration
+    [136145] = "Interface/Icons/Spell_Shadow_DeathCoil", -- ID: 265 - Class: WARLOCK - Spec: Affliction
+    [136172] = "Interface/Icons/Spell_Shadow_Metamorphosis", -- ID: 266 - Class: WARLOCK - Spec: Demonology
+    [136186] = "Interface/Icons/Spell_Shadow_RainOfFire", -- ID: 267 - Class: WARLOCK - Spec: Destruction
+    [608951] = "Interface/Icons/Spell_Monk_Brewmaster_Spec", -- ID: 268 - Class: MONK - Spec: Brewmaster
+    [608953] = "Interface/Icons/Spell_Monk_WindWalker_Spec", -- ID: 269 - Class: MONK - Spec: Windwalker
+    [608952] = "Interface/Icons/Spell_Monk_MistWeaver_Spec", -- ID: 270 - Class: MONK - Spec: Mistweaver
+    [236159] = "Interface/Icons/Ability_Druid_KingoftheJungle", -- ID: 535 - Class: Unavailable - Spec: Ferocity
+    [132150] = "Interface/Icons/Ability_EyeOfTheOwl", -- ID: 536 - Class: Unavailable - Spec: Cunning
+    [132121] = "Interface/Icons/ABILITY_DRUID_DEMORALIZINGROAR", -- ID: 537 - Class: Unavailable - Spec: Tenacity
+    [1247264] = "Interface/Icons/Ability_DemonHunter_SpecDPS", -- ID: 577 - Class: DEMONHUNTER - Spec: Havoc
+    [1247265] = "Interface/Icons/Ability_DemonHunter_SpecTank", -- ID: 581 - Class: DEMONHUNTER - Spec: Vengeance
+};
+
 --[[-------------------------------------------------------------------------------
     Common methods
 -------------------------------------------------------------------------------]]--
@@ -154,6 +200,10 @@ function A:SlashCommand(arg, ...)
         A:ShowHideMinimap();
     elseif ( arg == "help" ) then
         A:Message(L["COMMAND_HELP"]);
+    --@debug@
+    elseif ( arg == "icons" ) then
+        A:SpecIconsTable();
+    --@end-debug@
     else
         if ( tonumber(arg) ) then -- A number was provided, this is a spec switch
             arg = tonumber(arg);
@@ -281,30 +331,30 @@ end
 
 --- Compare two tables
 -- Return true if they are identical, false otherwise
-function A:CompareTables(t1, t2)
-    if ( type(t1) ~= "table" or type(t2) ~= "table" ) then return nil; end
+-- function A:CompareTables(t1, t2)
+    -- if ( type(t1) ~= "table" or type(t2) ~= "table" ) then return nil; end
 
-    if ( #t1 ~= #t2 ) then return nil; end
+    -- if ( #t1 ~= #t2 ) then return nil; end
 
-    for k,v in pairs(t1) do
-        if ( type(v) == "table" ) then
-            if ( type(t2[k]) == "table" ) then
-                if ( not A:CompareTables(t2[k], v) ) then
-                    return nil;
-                end
-            else
-                return nil;
-            end
-        elseif ( t2[k] ~= v ) then
-            return nil;
-        end
-    end
+    -- for k,v in pairs(t1) do
+        -- if ( type(v) == "table" ) then
+            -- if ( type(t2[k]) == "table" ) then
+                -- if ( not A:CompareTables(t2[k], v) ) then
+                    -- return nil;
+                -- end
+            -- else
+                -- return nil;
+            -- end
+        -- elseif ( t2[k] ~= v ) then
+            -- return nil;
+        -- end
+    -- end
 
-    return 1;
-end
+    -- return 1;
+-- end
 
 --- Replace a character in a string
--- @param pos TRhe position of the character to replace
+-- @param pos The position of the character to replace
 -- @param str The string
 -- @param r The character
 function A:ReplaceChar(pos, str, r)
@@ -374,6 +424,10 @@ function A:SetSpecializationsDatabase()
 
         local current = A.currentSpec == i and 1 or nil;
 
+        if ( type(icon) == "number" and A.iconsFileDataToFilePath[icon] ) then
+            icon = A.iconsFileDataToFilePath[icon];
+        end
+
         A.specDB[i] =
         {
             id = id,
@@ -392,6 +446,10 @@ function A:SetPetSpecializationsDatabase()
         local id, name, _, icon = GetSpecializationInfo(i, false, true);
 
         local current = A.currentPetSpec == i and 1 or nil;
+
+        if ( type(icon) == "number" and A.iconsFileDataToFilePath[icon] ) then
+            icon = A.iconsFileDataToFilePath[icon];
+        end
 
         A.petSpecDB[i] =
         {
@@ -435,9 +493,17 @@ function A:GetCurrentLootSpecInfos()
     if ( lootSpec == 0 ) then
         local _, ID, name, icon = A:GetCurrentSpecInfos();
 
+        if ( type(icon) == "number" and A.iconsFileDataToFilePath[icon] ) then
+            icon = A.iconsFileDataToFilePath[icon];
+        end
+
         return ID, name, L["Current specialization ( %s )"]:format(name or L["None"]), icon;
     else
         local _, ID, name, icon = A:GetSpecInfosByID(lootSpec);
+
+        if ( type(icon) == "number" and A.iconsFileDataToFilePath[icon] ) then
+            icon = A.iconsFileDataToFilePath[icon];
+        end
 
         return ID, name, name, icon;
     end

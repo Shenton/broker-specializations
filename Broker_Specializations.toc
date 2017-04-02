@@ -1,9 +1,9 @@
-## Interface: 70100
+## Interface: 70200
 ## Title: Broker Specializations
 ## Notes: A Data Broker add-on for quickly switching your specialization with gear set and loot specialization.
 ## Author: Shenton
 ## SavedVariables: brokerSpecializationsDB
-## Version: 1.2.2
+## Version: 1.2.3
 ## OptionalDeps: Ace3, LibDBIcon-1.0
 
 #@no-lib-strip@
@@ -39,3 +39,7 @@ Localization\Locales-zhTW.lua
 Core.lua
 
 Frames.xml
+
+#@debug@
+#DevTools.lua
+#@end-debug@
