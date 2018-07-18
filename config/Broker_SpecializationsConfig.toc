@@ -1,4 +1,4 @@
-## Interface: 70200
+## Interface: 80000
 ## Title: Broker Specializations |cFFC79C6E[|cFFABD473Configuration|cFFC79C6E]
 ## Notes: The configuration panel of Broker Specializations.
 ## Author: Shenton

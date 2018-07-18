@@ -11,9 +11,9 @@
 -------------------------------------------------------------------------------]]--
 
 -- GLOBALS: PlaySound, DEFAULT_CHAT_FRAME, GetSpecialization, GetNumSpecializations, GetSpecializationInfo
--- GLOBALS: GetLootSpecialization, UseEquipmentSet, SetLootSpecialization, SetSpecialization, GetNumEquipmentSets
--- GLOBALS: GetEquipmentSetInfo, UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, GetEquipmentSetInfoByName
--- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame, InterfaceOptions_AddCategory
+-- GLOBALS: GetLootSpecialization, SetLootSpecialization, SetSpecialization, C_EquipmentSet
+-- GLOBALS: UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, InterfaceOptions_AddCategory
+-- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame
 -- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
 -- GLOBALS: GameTooltip, BINDING_HEADER_BROKERSPECIALIZATIONS, BINDING_NAME_BROKERSPECIALIZATIONSONE
 -- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSTWO, BINDING_NAME_BROKERSPECIALIZATIONSTHREE
@@ -24,7 +24,7 @@
 -- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
 -- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture, GetPvpTalentInfo
 -- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass, StaticPopup_Resize
--- GLOBALS: IsControlKeyDown, GetTalentInfoByID
+-- GLOBALS: IsControlKeyDown, GetTalentInfoByID, SOUNDKIT
 
 --[[-------------------------------------------------------------------------------
     Global to local
@@ -243,7 +243,7 @@ function A:Message(text, color, silent)
     end
 
     if ( not silent ) then
-        PlaySound("TellMessage");
+        PlaySound(SOUNDKIT.TELL_MESSAGE);
     end
 
     DEFAULT_CHAT_FRAME:AddMessage(color..L["Broker Specializations"]..": "..A.color["RESET"]..text);
@@ -521,8 +521,8 @@ function A:SetGearAndLootAfterSwitch()
 
     if ( A.db.profile.switchGearWithSpec ) then
         if ( A.db.profile.specOptions[specID].gearSet ) then
-            local name = A:GetGearSetInfos(A.db.profile.specOptions[specID].gearSet);
-            UseEquipmentSet(name);
+            local setID = select(3, A:GetGearSetInfos(A.db.profile.specOptions[specID].gearSet));
+            C_EquipmentSet.UseEquipmentSet(setID);
         end
     end
 
@@ -632,14 +632,14 @@ end
 
 --- Set gear sets database
 function A:SetGearSetsDatabase()
-    local num = GetNumEquipmentSets();
+    local num = C_EquipmentSet.GetNumEquipmentSets();
     local name, icon, id;
 
     A.gearSetsDB = {};
 
     if ( num > 0 ) then
         for i=1,num do
-            name, icon, id = GetEquipmentSetInfo(i);
+            name, icon, id = C_EquipmentSet.GetEquipmentSetInfo(i-1); -- Equipment sets start at FUCKING 0, nice one here blizzard
 
             icon = icon or A.questionMark;
 
@@ -658,12 +658,12 @@ end
 -- but for that I will have to monitor every modification of the user equipment
 -- and those events fire a lot
 function A:GetCurrentGearSet()
-    local num = GetNumEquipmentSets();
+    local num = C_EquipmentSet.GetNumEquipmentSets();
     local name, icon, _, current;
 
     if ( num > 0 ) then
         for i=1,num do
-            name, icon, _, current = GetEquipmentSetInfo(i);
+            name, icon, _, current = C_EquipmentSet.GetEquipmentSetInfo(i-1);
 
             if ( current ) then
                 icon = icon or A.questionMark;
@@ -809,7 +809,7 @@ function A:TalentsFrameOnLoad(self)
 end
 
 function A:TalentsFrameOnShow(self)
-    PlaySound("igCharacterInfoOpen");
+    PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 
     -- Set the pvp icon
     if ( A.playerFaction == "Alliance" ) then
@@ -824,7 +824,7 @@ function A:TalentsFrameOnShow(self)
 end
 
 function A:TalentsFrameOnHide(self)
-    PlaySound("igCharacterInfoClose");
+    PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
 
     for i=1,7 do
         for j=1,3 do
@@ -837,7 +837,7 @@ end
 function A:TalentsTabOnClick(self)
     if ( A.talentsFrame.currentTab == "talents" ) then return; end
 
-    PlaySound("igMainMenuOptionCheckBoxOff");
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
     A.talentsFrame.currentTab = "talents";
     A:TalentsFrameUpdate();
 end
@@ -845,7 +845,7 @@ end
 function A:PvpTabOnClick(self)
     if ( A.talentsFrame.currentTab == "pvp" ) then return; end
 
-    PlaySound("igMainMenuOptionCheckBoxOff");
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
     A.talentsFrame.currentTab = "pvp";
     A:TalentsFrameUpdate();
 end
@@ -1570,8 +1570,8 @@ local function DropdownMenu(self, level)
                 info.text = v.name;
                 info.icon = v.icon;
                 info.padding = 20;
-                info.disabled = select(3, GetEquipmentSetInfoByName(v.name));
-                info.func = function() UseEquipmentSet(v.name); end;
+                info.disabled = select(4, C_EquipmentSet.GetEquipmentSetInfo(v.id));
+                info.func = function() C_EquipmentSet.UseEquipmentSet(v.id); end;
                 UIDropDownMenu_AddButton(info, level);
             end
         elseif ( UIDROPDOWNMENU_MENU_VALUE == "LOOTSPEC" ) then
