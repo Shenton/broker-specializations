@@ -44,6 +44,8 @@ L["Talents"] = true;
 L["Text"] = true;
 L["Tooltip"] = true;
 
+L["Unknown"]= true;
+
 -- Common
 L["Not available"] = true;
 L["Current specialization ( %s )"] = true;
@@ -193,6 +195,7 @@ L["Click here to add your custom specialization short name."] = true;
 L["Reset short name to default"] = true;
 L["Red none"] = true;
 L["This will color in red gear set and talents profile names, if they are displaying \"None\"."] = true;
+L["This talent no longer exists."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;

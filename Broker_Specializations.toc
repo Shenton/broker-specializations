@@ -4,7 +4,7 @@
 ## Author: Shenton
 ## SavedVariables: brokerSpecializationsDB
 ## Version: 1.2.5
-## OptionalDeps: Ace3, LibDBIcon-1.0
+## OptionalDeps: Ace3, LibDBIcon-1.0, LibQTip-1.0
 
 #@no-lib-strip@
 Libs\LibStub\LibStub.lua

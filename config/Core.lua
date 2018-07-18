@@ -729,14 +729,26 @@ function A:ConfigurationPanel()
         for kk,vv in pairs(v.talents) do
             local _, name, texture, _, _, spellID, _, row, column = GetTalentInfoByID(vv);
 
-            configPanel.args.talentsProfiles.args[tostring(k)].args["list"..name] =
-            {
-                order = order,
-                type = "execute",
-                name = name.." ("..row.." - "..column..")",
-                desc = GetSpellDescription(spellID),
-                image = texture,
-            }
+            if ( name ) then
+                configPanel.args.talentsProfiles.args[tostring(k)].args["list"..name] =
+                {
+                    order = order,
+                    type = "execute",
+                    name = name.." ("..row.." - "..column..")",
+                    desc = GetSpellDescription(spellID),
+                    image = texture,
+                }
+            else
+                configPanel.args.talentsProfiles.args[tostring(k)].args["listNoLongerExists"..order] =
+                {
+                    order = order,
+                    type = "execute",
+                    name = L["Unknown"],
+                    desc = L["This talent no longer exists."],
+                    image = A.questionMark,
+                }
+            end
+
             order = order + 1;
         end
 

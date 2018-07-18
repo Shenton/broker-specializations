@@ -1100,9 +1100,15 @@ function A:SetSwitchItemsTooltip(frame)
     -- Check if the player is already buffed
     local index = UnitLevel("player") > 100 and 3 or 1; -- Start at index 3 if the player is above 100
 
-    for i=index,#A.talentsSwitchBuffsNames do
-        if ( UnitBuff("player", A.talentsSwitchBuffsNames[i]) ) then
-            GameTooltip:AddLine(A.color["RED"]..L["You are already buffed with %s."]:format(A.talentsSwitchBuffsNames[i]));
+    for i=1,40 do
+        local buffName = UnitBuff("player", i);
+
+        if ( buffName ) then
+            if ( tContains(A.talentsSwitchBuffsNames, buffName) ) then
+                GameTooltip:AddLine(A.color["RED"]..L["You are already buffed with %s."]:format(A.talentsSwitchBuffsNames[i]));
+                break;
+            end
+        else
             break;
         end
     end
