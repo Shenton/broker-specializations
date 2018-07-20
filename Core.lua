@@ -842,12 +842,13 @@ function A:TalentsTabOnClick(self)
     A:TalentsFrameUpdate();
 end
 
-function A:PvpTabOnClick(self)
-    if ( A.talentsFrame.currentTab == "pvp" ) then return; end
+function A:PvpTabOnClick(self) -- /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\ THIS WILL NEED MODIFICATION /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\
+    A:Message("PvP talents frame is deactivated until I can find a proper way to display it.", 1);
+    -- if ( A.talentsFrame.currentTab == "pvp" ) then return; end
 
-    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
-    A.talentsFrame.currentTab = "pvp";
-    A:TalentsFrameUpdate();
+    -- PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
+    -- A.talentsFrame.currentTab = "pvp";
+    -- A:TalentsFrameUpdate();
 end
 
 function A:SetTalentsFrameForTalents()
@@ -862,11 +863,6 @@ function A:SetTalentsFrameForTalents()
     A.talentsFrame.PvpTab.Highlight:Show();
     A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
 
-    -- Show last row
-    for i=1,3 do
-        A.talentsFrame["row7col"..i]:Show();
-    end
-
     -- Anchor items buttons
     A.talentsFrame.ItemButton1:SetPoint("TOP", A.talentsFrame.row7col2, "BOTTOM", -21, -6);
 
@@ -876,26 +872,21 @@ end
 
 function A:SetTalentsFrameForPvp()
     -- Title
-    A.talentsFrame.TitleText:SetText(L["PvP"]);
+    -- A.talentsFrame.TitleText:SetText(L["PvP"]);
 
     -- Tabs
-    A.talentsFrame.PvpTab.Hider:Hide();
-    A.talentsFrame.PvpTab.Highlight:Hide();
-    A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
-    A.talentsFrame.TalentsTab.Hider:Show();
-    A.talentsFrame.TalentsTab.Highlight:Show();
-    A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
-
-    -- Hide last row
-    for i=1,3 do
-        A.talentsFrame["row7col"..i]:Hide();
-    end
+    -- A.talentsFrame.PvpTab.Hider:Hide();
+    -- A.talentsFrame.PvpTab.Highlight:Hide();
+    -- A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
+    -- A.talentsFrame.TalentsTab.Hider:Show();
+    -- A.talentsFrame.TalentsTab.Highlight:Show();
+    -- A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
 
     -- Anchor items buttons
-    A.talentsFrame.ItemButton1:SetPoint("TOP", A.talentsFrame.row6col2, "BOTTOM", -21, -6);
+    -- A.talentsFrame.ItemButton1:SetPoint("TOP", A.talentsFrame.row10col2, "BOTTOM", -21, -6);
 
     -- Set Frame height
-    A.talentsFrame:SetHeight(388);
+    -- A.talentsFrame:SetHeight(610);
 end
 
 local glowOverlays = {};
@@ -977,32 +968,7 @@ function A:TalentsFrameUpdate()
         end
     --- PvP talents
     else
-        A:SetTalentsFrameForPvp();
-
-        for i=1,6 do
-            for j=1,3 do
-                local talentID, name, texture, selected, available, _, unlocked = GetPvpTalentInfo(i, j, talentGroup, false);
-                local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
-
-                button.talentGroup = talentGroup;
-                button:SetID(talentID);
-                SetItemButtonTexture(button, texture);
-
-                if ( unlocked ) then
-                    button.icon:SetDesaturated(false);
-                else
-                    button.icon:SetDesaturated(true);
-                end
-
-                if ( selected ) then
-                    A:ShowOverlay(button);
-                    button:RegisterForDrag("LeftButton");
-                else
-                    A:HideOverlay(button);
-                    button:RegisterForDrag();
-                end
-            end
-        end
+        --A:SetTalentsFrameForPvp();
     end
 
     -- Talents switch items
@@ -1129,6 +1095,9 @@ function A:TalentsFrameShowOrHide(relativeTo, tab)
 
         if ( not tab ) then
             tab = "talents";
+        else -- /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\ THIS WILL NEED MODIFICATION /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\
+            tab = "talents";
+            A:Message("PvP talents frame is deactivated until I can find a proper way to display it.", 1);
         end
 
         local point, relativePoint = A:SmartAnchor();

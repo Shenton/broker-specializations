@@ -215,7 +215,7 @@
                 </Scripts>
             </Button>
             <!-- Row 1 -->
-            <Button name="$parentTalentButtonRow1Col2" inherits="BrokerSpecializationsButtonTemplate">
+            <Button name="$parentTalentButtonRow1Col2" parentKey="row1col2" inherits="BrokerSpecializationsButtonTemplate">
                 <Anchors>
                     <Anchor point="TOP" relativeTo="$parent" relativePoint="TOP" y="-68"/>
                 </Anchors>
@@ -231,7 +231,7 @@
                 </Anchors>
             </Button>
             <!-- Row 2 -->
-            <Button name="$parentTalentButtonRow2Col2" inherits="BrokerSpecializationsButtonTemplate">
+            <Button name="$parentTalentButtonRow2Col2" parentKey="row2col2" inherits="BrokerSpecializationsButtonTemplate">
                 <Anchors>
                     <Anchor point="TOP" relativeTo="$parentTalentButtonRow1Col2" relativePoint="BOTTOM" y="-6"/>
                 </Anchors>
@@ -247,7 +247,7 @@
                 </Anchors>
             </Button>
             <!-- Row 3 -->
-            <Button name="$parentTalentButtonRow3Col2" inherits="BrokerSpecializationsButtonTemplate">
+            <Button name="$parentTalentButtonRow3Col2" parentKey="row3col2" inherits="BrokerSpecializationsButtonTemplate">
                 <Anchors>
                     <Anchor point="TOP" relativeTo="$parentTalentButtonRow2Col2" relativePoint="BOTTOM" y="-6"/>
                 </Anchors>
@@ -263,7 +263,7 @@
                 </Anchors>
             </Button>
             <!-- Row 4 -->
-            <Button name="$parentTalentButtonRow4Col2" inherits="BrokerSpecializationsButtonTemplate">
+            <Button name="$parentTalentButtonRow4Col2" parentKey="row4col2" inherits="BrokerSpecializationsButtonTemplate">
                 <Anchors>
                     <Anchor point="TOP" relativeTo="$parentTalentButtonRow3Col2" relativePoint="BOTTOM" y="-6"/>
                 </Anchors>
@@ -279,7 +279,7 @@
                 </Anchors>
             </Button>
             <!-- Row 5 -->
-            <Button name="$parentTalentButtonRow5Col2" inherits="BrokerSpecializationsButtonTemplate">
+            <Button name="$parentTalentButtonRow5Col2" parentKey="row5col2" inherits="BrokerSpecializationsButtonTemplate">
                 <Anchors>
                     <Anchor point="TOP" relativeTo="$parentTalentButtonRow4Col2" relativePoint="BOTTOM" y="-6"/>
                 </Anchors>
