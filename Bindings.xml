@@ -1,17 +1,17 @@
 <Bindings>
-    <Binding name="BROKERSPECIALIZATIONSONE" header="BROKERSPECIALIZATIONS" category="ADDONS">
+    <Binding name="BROKERSPECIALIZATIONSONE" category="ADDONS" header="BROKERSPECIALIZATIONS">
         SetSpecialization(1)
     </Binding>
-    <Binding name="BROKERSPECIALIZATIONSTWO" header="BROKERSPECIALIZATIONS" category="ADDONS">
+    <Binding name="BROKERSPECIALIZATIONSTWO" category="ADDONS">
         SetSpecialization(2)
     </Binding>
-    <Binding name="BROKERSPECIALIZATIONSTHREE" header="BROKERSPECIALIZATIONS" category="ADDONS">
+    <Binding name="BROKERSPECIALIZATIONSTHREE" category="ADDONS">
         SetSpecialization(3)
     </Binding>
-    <Binding name="BROKERSPECIALIZATIONSFOUR" header="BROKERSPECIALIZATIONS" category="ADDONS">
+    <Binding name="BROKERSPECIALIZATIONSFOUR" category="ADDONS">
         SetSpecialization(4)
     </Binding>
-    <Binding name="BROKERSPECIALIZATIONSDUAL" header="BROKERSPECIALIZATIONS" category="ADDONS">
+    <Binding name="BROKERSPECIALIZATIONSDUAL" category="ADDONS">
         BrokerSpecializationsGlobal:DualSwitch()
     </Binding>
 </Bindings>

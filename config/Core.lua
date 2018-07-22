@@ -767,3 +767,10 @@ LibStub("AceConfig-3.0"):RegisterOptionsTable("BrokerSpecializationsConfigPanel"
 
 -- Adding add-on configuration to Blizzard UI
 A.configurationPanel = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("BrokerSpecializationsConfigPanel", L["Broker Specializations"]);
+
+A.ConfigNotifyChange = function()
+    if ( A.configurationPanel:IsVisible() ) then
+        LibStub("AceConfigRegistry-3.0"):NotifyChange("BrokerSpecializationsConfigPanel", A.ConfigurationPanel);
+    end
+end
+

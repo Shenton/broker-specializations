@@ -24,7 +24,7 @@
 -- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
 -- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture, GetPvpTalentInfo
 -- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass, StaticPopup_Resize
--- GLOBALS: IsControlKeyDown, GetTalentInfoByID, SOUNDKIT
+-- GLOBALS: IsControlKeyDown, GetTalentInfoByID, SOUNDKIT, tContains
 
 --[[-------------------------------------------------------------------------------
     Global to local
@@ -181,6 +181,9 @@ A.iconsFileDataToFilePath =
     [1247264] = "Interface/Icons/Ability_DemonHunter_SpecDPS", -- ID: 577 - Class: DEMONHUNTER - Spec: Havoc
     [1247265] = "Interface/Icons/Ability_DemonHunter_SpecTank", -- ID: 581 - Class: DEMONHUNTER - Spec: Vengeance
 };
+
+-- Fake method until the config is loaded
+A.ConfigNotifyChange = function() end;
 
 --[[-------------------------------------------------------------------------------
     Common methods
@@ -404,6 +407,7 @@ function A:SetEverything()
     A:UpdateBroker();
     A:SetTalentsSwitchBuffsNames();
     A:CacheTalentsSwitchItems();
+    A:ConfigNotifyChange();
 
     -- Calling CleanupDatabase before setting the player class in the DB
     -- It's very unlikely to happen, but in case of rename it will handle things
@@ -633,22 +637,22 @@ end
 --- Set gear sets database
 function A:SetGearSetsDatabase()
     local num = C_EquipmentSet.GetNumEquipmentSets();
-    local name, icon, id;
 
     A.gearSetsDB = {};
 
     if ( num > 0 ) then
-        for i=1,num do
-            name, icon, id = C_EquipmentSet.GetEquipmentSetInfo(i-1); -- Equipment sets start at FUCKING 0, nice one here blizzard
+        for i=0,num do -- Equipment sets start at 0, nice one here blizzard
+            local name, icon, id = C_EquipmentSet.GetEquipmentSetInfo(i);
 
-            icon = icon or A.questionMark;
-
-            A.gearSetsDB[i] =
-            {
-                name = name,
-                icon = icon,
-                id = id,
-            };
+            if ( name and id ) then
+                icon = icon or A.questionMark;
+                A.gearSetsDB[#A.gearSetsDB+1] =
+                {
+                    name = name,
+                    icon = icon,
+                    id = id,
+                };
+            end
         end
     end
 end
@@ -1199,6 +1203,7 @@ function A:AddTalentsProfile(name)
 
     A:UpdateBroker();
     A:RefreshTooltip();
+    A:ConfigNotifyChange();
 end
 
 function A:AddTalentsProfilePopup()
@@ -1899,23 +1904,27 @@ function A:PLAYER_TALENT_UPDATE()
 
     A:UpdateBroker();
     A:RefreshTooltip();
+    A:ConfigNotifyChange();
 end
 
 function A:PET_SPECIALIZATION_CHANGED()
     A.currentPetSpec = GetSpecialization(false, true);
     A:SetPetSpecializationsDatabase();
     A:RefreshTooltip();
+    A:ConfigNotifyChange();
 end
 
 function A:PLAYER_LOOT_SPEC_UPDATED()
     A:UpdateBroker();
     A:RefreshTooltip();
+    A:ConfigNotifyChange();
 end
 
 function A:EQUIPMENT_SETS_CHANGED()
     A:SetGearSetsDatabase();
     A:UpdateBroker();
     A:RefreshTooltip();
+    A:ConfigNotifyChange();
 end
 
 function A:PLAYER_REGEN_DISABLED()
@@ -1957,11 +1966,13 @@ end
 function A:EQUIPMENT_SWAP_FINISHED(event, success, set)
     A:UpdateBroker();
     A:RefreshTooltip();
+    A:ConfigNotifyChange();
 end
 
 function A:PLAYER_EQUIPMENT_CHANGED()
     A:UpdateBroker();
     A:RefreshTooltip();
+    A:ConfigNotifyChange();
 end
 
 --[[-------------------------------------------------------------------------------
