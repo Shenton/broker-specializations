@@ -1764,7 +1764,7 @@ function A:Tooltip(anchorFrame)
     end
 
     tip:SmartAnchorTo(anchorFrame);
-    tip:SetAutoHideDelay(0.01, anchorFrame);
+    tip:SetAutoHideDelay(0.01, anchorFrame, A.HideTooltip);
     tip:Show();
 end
 
