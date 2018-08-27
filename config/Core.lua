@@ -7,19 +7,15 @@
 -------------------------------------------------------------------------------]]--
 
 --[[-------------------------------------------------------------------------------
-    FindGlobals
--------------------------------------------------------------------------------]]--
-
--- GLOBALS: LibStub, GetTalentInfoByID, GetSpellDescription
-
---[[-------------------------------------------------------------------------------
-    Global to local
+    Upvalues
 -------------------------------------------------------------------------------]]--
 
 local ipairs = ipairs;
 local _G = _G;
 local pairs = pairs;
 local tostring = tostring;
+
+-- GLOBALS: LibStub, GetTalentInfoByID, GetSpellDescription
 
 --[[-------------------------------------------------------------------------------
     Addon global
@@ -79,9 +75,19 @@ function A:ConfigurationPanel()
                                 set = function() A.db.profile.switchGearWithSpec = not A.db.profile.switchGearWithSpec; end,
                                 get = function() return A.db.profile.switchGearWithSpec; end,
                             },
+                            switchGearWithTalents =
+                            {
+                                order = 1,
+                                name = L["Switch gear with talents"],
+                                desc = L["Switch to the selected equipment set when switching a talents profile. Set this within the talents profiles tab.\nIf this is enabled with specialization switch, the addon will try to equip the talents profile defined gear set."],
+                                width = "full",
+                                type = "toggle",
+                                set = function() A.db.profile.switchGearWithTalents = not A.db.profile.switchGearWithTalents; end,
+                                get = function() return A.db.profile.switchGearWithTalents; end,
+                            },
                             switchLootWithSpec =
                             {
-                                order = 0,
+                                order = 2,
                                 name = L["Switch loot specialization with specialization"],
                                 desc = L["Switch to the selected loot specialization when switching a specialization. Set this within the specialization tab."],
                                 width = "full",
@@ -367,7 +373,6 @@ function A:ConfigurationPanel()
                                 order = 301,
                                 name = L["Display talents profile"],
                                 desc = L["Display the current talents profile on the Data Broker display."],
-                                --width = "full",
                                 type = "toggle",
                                 set = function()
                                     A.db.profile.showTalentProfileName = not A.db.profile.showTalentProfileName;
@@ -450,23 +455,7 @@ function A:ConfigurationPanel()
                 order = 200,
                 name = L["Talents profiles"],
                 type = "group",
-                args =
-                {
-                    -- options =
-                    -- {
-                        -- order = 0,
-                        -- name = L["Options"],
-                        -- type = "group",
-                        -- args = {},
-                    -- },
-                    -- profiles =
-                    -- {
-                        -- order = 0,
-                        -- name = L["Profiles"],
-                        -- type = "group",
-                        -- args = {},
-                    -- },
-                },
+                args = {},
             },
         },
     };
@@ -490,6 +479,28 @@ function A:ConfigurationPanel()
                     inline = true,
                     args =
                     {
+                        clearGearSetHeader =
+                        {
+                            order = 0,
+                            name = L["Clear"],
+                            type = "header",
+                        },
+                        clearGearSet =
+                        {
+                            order = 1,
+                            type = "execute",
+                            name = L["Clear"],
+                            desc = L["Click this to clear the selected gear set."],
+                            func = function()
+                                A.db.profile.specOptions[v.id].gearSet = nil;
+                            end,
+                        },
+                        gearSetHeader =
+                        {
+                            order = 100,
+                            name = L["Gear set"],
+                            type = "header",
+                        },
                     },
                 },
                 lootSpec =
@@ -576,7 +587,7 @@ function A:ConfigurationPanel()
         };
         groupOrder = groupOrder + 1;
 
-        order = 0;
+        order = 101;
 
         for _,vv in ipairs(A.gearSetsDB) do
             configPanel.args.specializationsOptions.args["spec"..v.name].args.gearSet.args[order..vv.name] =
@@ -585,7 +596,6 @@ function A:ConfigurationPanel()
                 name = vv.name,
                 image = vv.icon,
                 desc = L["Select this to use gear set %s when switching to specialization %s."]:format(vv.name, v.name),
-                --width = "full",
                 type = "toggle",
                 set = function(info, val) A.db.profile.specOptions[v.id].gearSet = val and vv.id or nil; end,
                 get = function() return A.db.profile.specOptions[v.id].gearSet == vv.id and 1 or nil; end,
@@ -630,107 +640,150 @@ function A:ConfigurationPanel()
             order = groupOrder,
             name = tostring(k.." (|T"..v.specIcon..":16:16:0:0|t"..v.specName..")"),
             type = "group",
-            inline = true,
             args =
             {
-                listHeader =
+                listProfiles =
                 {
                     order = 0,
                     name = L["Talents List"],
-                    type = "header",
+                    type = "group",
+                    inline = true,
+                    args =
+                    {
+                    },
                 },
-                renameHeader =
-                {
-                    order = 50,
-                    name = L["Rename"],
-                    type = "header",
-                },
-                renameProfileInput =
-                {
-                    order = 51,
-                    name = L["Rename"],
-                    desc = L["Enter the new name of the profile %s. It will enable the button next to this box."]:format(tostring(k));
-                    type = "input",
-                    get = function()
-                        return profilesRenameTable[k] or "";
-                    end,
-                    set = function(info, val)
-                        if ( val == "" and profilesRenameTable[k] ) then
-                            profilesRenameTable[k] = nil;
-                        end
-
-                        val = tostring(val);
-                        profilesRenameTable[k] = val;
-                    end,
-                },
-                renameProfileExecute =
-                {
-                    order = 52,
-                    name = L["Rename"],
-                    desc = L["Rename the profile %s to %s."]:format(tostring(k), profilesRenameTable[k] or "");
-                    type = "execute",
-                    disabled = function()
-                        if ( not profilesRenameTable[k] ) then
-                            return true;
-                        end
-                    end,
-                    func = function()
-                        if ( A.db.profile.talentsProfiles[profilesRenameTable[k]] ) then
-                            A:Message(L["The profile %s already exists, please choose another name."]:format(profilesRenameTable[k]), 1);
-                            profilesRenameTable[k] = nil;
-                            return;
-                        end
-
-                       A.db.profile.talentsProfiles[profilesRenameTable[k]] = {};
-                       A:CopyTable(A.db.profile.talentsProfiles[k], A.db.profile.talentsProfiles[profilesRenameTable[k]]);
-                       A.db.profile.talentsProfiles[k] = nil;
-                       profilesRenameTable[k] = nil;
-                       A:UpdateBroker();
-                       A:RefreshTooltip();
-                    end,
-                },
-                deleteHeader =
+                gearSet =
                 {
                     order = 100,
-                    name = L["Delete"],
-                    type = "header",
+                    name = L["Gear set"],
+                    type = "group",
+                    inline = true,
+                    args =
+                    {
+                        clearGearSetHeader =
+                        {
+                            order = 0,
+                            name = L["Clear"],
+                            type = "header",
+                        },
+                        clearGearSet =
+                        {
+                            order = 1,
+                            type = "execute",
+                            name = L["Clear"],
+                            desc = L["Click this to clear the selected gear set."],
+                            func = function()
+                                A.db.profile.talentsProfiles[k].gearSet = nil;
+                            end,
+                        },
+                        gearSetHeader =
+                        {
+                            order = 100,
+                            name = L["Gear set"],
+                            type = "header",
+                        },
+                    },
                 },
-                deleteProfileToggle =
+                renameProfile =
                 {
-                    order = 101,
-                    name = L["Enable"],
-                    desc = L["Enable the delete button for the profile %s."]:format(tostring(k));
-                    type = "toggle",
-                    get = profilesDeleteTable[k],
-                    set = function() profilesDeleteTable[k] = not profilesDeleteTable[k]; end,
+                    order = 200,
+                    name = L["Rename"],
+                    type = "group",
+                    inline = true,
+                    args =
+                    {
+                        renameProfileInput =
+                        {
+                            order = 51,
+                            name = L["Rename"],
+                            desc = L["Enter the new name of the profile %s. It will enable the button next to this box."]:format(tostring(k));
+                            type = "input",
+                            get = function()
+                                return profilesRenameTable[k] or "";
+                            end,
+                            set = function(info, val)
+                                if ( val == "" and profilesRenameTable[k] ) then
+                                    profilesRenameTable[k] = nil;
+                                end
+
+                                val = tostring(val);
+                                profilesRenameTable[k] = val;
+                            end,
+                        },
+                        renameProfileExecute =
+                        {
+                            order = 52,
+                            name = L["Rename"],
+                            desc = L["Rename the profile %s to %s."]:format(tostring(k), profilesRenameTable[k] or "");
+                            type = "execute",
+                            disabled = function()
+                                if ( not profilesRenameTable[k] ) then
+                                    return true;
+                                end
+                            end,
+                            func = function()
+                                if ( A.db.profile.talentsProfiles[profilesRenameTable[k]] ) then
+                                    A:Message(L["The profile %s already exists, please choose another name."]:format(profilesRenameTable[k]), 1);
+                                    profilesRenameTable[k] = nil;
+                                    return;
+                                end
+
+                               A.db.profile.talentsProfiles[profilesRenameTable[k]] = {};
+                               A:CopyTable(A.db.profile.talentsProfiles[k], A.db.profile.talentsProfiles[profilesRenameTable[k]]);
+                               A.db.profile.talentsProfiles[k] = nil;
+                               profilesRenameTable[k] = nil;
+                               A:UpdateBroker();
+                               A:RefreshTooltip();
+                            end,
+                        },
+                    },
                 },
-                deleteProfileExecute =
+                deleteProfile =
                 {
-                    order = 102,
+                    order = 300,
                     name = L["Delete"],
-                    desc = L["Delete the profile %s.\n\n|cffff3333This is definitive."]:format(tostring(k));
-                    type = "execute",
-                    disabled = function()
-                        if ( not profilesDeleteTable[k] ) then
-                            return true;
-                        end
-                    end,
-                    func = function()
-                       A.db.profile.talentsProfiles[k] = nil;
-                       profilesDeleteTable[k] = nil;
-                       A:UpdateBroker();
-                       A:RefreshTooltip();
-                    end,
+                    type = "group",
+                    inline = true,
+                    args =
+                    {
+                        deleteProfileToggle =
+                        {
+                            order = 101,
+                            name = L["Enable"],
+                            desc = L["Enable the delete button for the profile %s."]:format(tostring(k));
+                            type = "toggle",
+                            get = profilesDeleteTable[k],
+                            set = function() profilesDeleteTable[k] = not profilesDeleteTable[k]; end,
+                        },
+                        deleteProfileExecute =
+                        {
+                            order = 102,
+                            name = L["Delete"],
+                            desc = L["Delete the profile %s.\n\n|cffff3333This is definitive."]:format(tostring(k));
+                            type = "execute",
+                            disabled = function()
+                                if ( not profilesDeleteTable[k] ) then
+                                    return true;
+                                end
+                            end,
+                            func = function()
+                               A.db.profile.talentsProfiles[k] = nil;
+                               profilesDeleteTable[k] = nil;
+                               A:UpdateBroker();
+                               A:RefreshTooltip();
+                            end,
+                        },
+                    },
                 },
             },
         };
 
-        order = 1;
+        order = 0;
         for kk,vv in pairs(v.talents) do
             local _, name, texture, _, _, spellID, _, row, column = GetTalentInfoByID(vv);
 
             if ( name ) then
-                configPanel.args.talentsProfiles.args[tostring(k)].args["list"..name] =
+                configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["list"..name] =
                 {
                     order = order,
                     type = "execute",
@@ -739,7 +792,7 @@ function A:ConfigurationPanel()
                     image = texture,
                 }
             else
-                configPanel.args.talentsProfiles.args[tostring(k)].args["listNoLongerExists"..order] =
+                configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["listNoLongerExists"..order] =
                 {
                     order = order,
                     type = "execute",
@@ -749,6 +802,21 @@ function A:ConfigurationPanel()
                 }
             end
 
+            order = order + 1;
+        end
+
+        order = 101;
+        for _,vv in ipairs(A.gearSetsDB) do
+            configPanel.args.talentsProfiles.args[tostring(k)].args.gearSet.args[order..vv.name] =
+            {
+                order = order,
+                name = vv.name,
+                image = vv.icon,
+                desc = L["Select this to use gear set %s when switching to talents profile %s."]:format(vv.name, k),
+                type = "toggle",
+                set = function(info, val) A.db.profile.talentsProfiles[k].gearSet = val and vv.id or nil; end,
+                get = function() return A.db.profile.talentsProfiles[k].gearSet == vv.id and 1 or nil; end,
+            };
             order = order + 1;
         end
 

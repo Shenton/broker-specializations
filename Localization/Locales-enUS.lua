@@ -16,6 +16,7 @@ L["Add"] = true;
 L["Automation"] = true;
 
 L["Cancel"] = true;
+L["Clear"] = true;
 L["Close"] = true;
 L["Configuration"] = true;
 
@@ -196,6 +197,10 @@ L["Reset short name to default"] = true;
 L["Red none"] = true;
 L["This will color in red gear set and talents profile names, if they are displaying \"None\"."] = true;
 L["This talent no longer exists."] = true;
+L["Select this to use gear set %s when switching to talents profile %s."] = true;
+L["Switch gear with talents"] = true;
+L["Switch to the selected equipment set when switching a talents profile. Set this within the talents profiles tab.\nIf this is enabled with specialization switch, the addon will try to equip the talents profile defined gear set."] = true;
+L["Click this to clear the selected gear set."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;

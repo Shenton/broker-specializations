@@ -7,27 +7,7 @@
 -------------------------------------------------------------------------------]]--
 
 --[[-------------------------------------------------------------------------------
-    FindGlobals
--------------------------------------------------------------------------------]]--
-
--- GLOBALS: PlaySound, DEFAULT_CHAT_FRAME, GetSpecialization, GetNumSpecializations, GetSpecializationInfo
--- GLOBALS: GetLootSpecialization, SetLootSpecialization, SetSpecialization, C_EquipmentSet
--- GLOBALS: UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, InterfaceOptions_AddCategory
--- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame
--- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
--- GLOBALS: GameTooltip, BINDING_HEADER_BROKERSPECIALIZATIONS, BINDING_NAME_BROKERSPECIALIZATIONSONE
--- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSTWO, BINDING_NAME_BROKERSPECIALIZATIONSTHREE
--- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSFOUR, BINDING_NAME_BROKERSPECIALIZATIONSDUAL, UIParent
--- GLOBALS: GetCursorPosition, IsShiftKeyDown, BrokerSpecializationsTalentsFrame, ChatFrame_RemoveMessageEventFilter
--- GLOBALS: ChatFrame_AddMessageEventFilter, ERR_SPELL_UNLEARNED_S, ERR_LEARN_ABILITY_S, ERR_LEARN_PASSIVE_S
--- GLOBALS: ERR_LEARN_SPELL_S, ERR_PET_LEARN_ABILITY_S, ERR_PET_LEARN_SPELL_S, ERR_PET_SPELL_UNLEARNED_S
--- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
--- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture, GetPvpTalentInfo
--- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass, StaticPopup_Resize
--- GLOBALS: IsControlKeyDown, GetTalentInfoByID, SOUNDKIT, tContains
-
---[[-------------------------------------------------------------------------------
-    Global to local
+    Upvalues
 -------------------------------------------------------------------------------]]--
 
 local ipairs = ipairs;
@@ -39,9 +19,22 @@ local string = string;
 local type = type;
 local pairs = pairs;
 local tostring = tostring;
-local tinsert = tinsert;
-local tremove = tremove;
 local time = time;
+
+-- GLOBALS: PlaySound, DEFAULT_CHAT_FRAME, GetSpecialization, GetNumSpecializations, GetSpecializationInfo
+-- GLOBALS: GetLootSpecialization, SetLootSpecialization, SetSpecialization, C_EquipmentSet
+-- GLOBALS: UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, InterfaceOptions_AddCategory
+-- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame, SOUNDKIT, tContains
+-- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
+-- GLOBALS: GameTooltip, BINDING_HEADER_BROKERSPECIALIZATIONS, BINDING_NAME_BROKERSPECIALIZATIONSONE
+-- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSTWO, BINDING_NAME_BROKERSPECIALIZATIONSTHREE, GetTalentInfoByID
+-- GLOBALS: BINDING_NAME_BROKERSPECIALIZATIONSFOUR, BINDING_NAME_BROKERSPECIALIZATIONSDUAL, UIParent
+-- GLOBALS: GetCursorPosition, IsShiftKeyDown, BrokerSpecializationsTalentsFrame, ChatFrame_RemoveMessageEventFilter
+-- GLOBALS: ChatFrame_AddMessageEventFilter, ERR_SPELL_UNLEARNED_S, ERR_LEARN_ABILITY_S, ERR_LEARN_PASSIVE_S
+-- GLOBALS: ERR_LEARN_SPELL_S, ERR_PET_LEARN_ABILITY_S, ERR_PET_LEARN_SPELL_S, ERR_PET_SPELL_UNLEARNED_S
+-- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
+-- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture
+-- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass, IsControlKeyDown
 
 --[[-------------------------------------------------------------------------------
     Libs & addon global
@@ -524,7 +517,11 @@ function A:SetGearAndLootAfterSwitch()
     local _, specID = A:GetCurrentSpecInfos();
 
     if ( A.db.profile.switchGearWithSpec ) then
-        if ( A.db.profile.specOptions[specID].gearSet ) then
+        local currentTalentsProfile = A:GetCurrentUsedTalentsProfile();
+
+        if ( A.db.profile.switchGearWithTalents and currentTalentsProfile and A.db.profile.talentsProfiles[currentTalentsProfile].gearSet ) then
+            C_EquipmentSet.UseEquipmentSet(A.db.profile.talentsProfiles[currentTalentsProfile].gearSet);
+        elseif ( A.db.profile.specOptions[specID].gearSet ) then
             local setID = select(3, A:GetGearSetInfos(A.db.profile.specOptions[specID].gearSet));
             C_EquipmentSet.UseEquipmentSet(setID);
         end
@@ -809,7 +806,7 @@ function A:TalentsFrameOnLoad(self)
     self.TitleText:ClearAllPoints();
     self.TitleText:SetPoint("TOP", self, "TOP", -12, -4);
     self.closeButton:SetText(L["Close"]);
-    tinsert(UISpecialFrames, self:GetName());
+    table.insert(UISpecialFrames, self:GetName());
 end
 
 function A:TalentsFrameOnShow(self)
@@ -896,7 +893,7 @@ end
 local glowOverlays = {};
 local numOverlays = 0;
 function A:GetOverlay()
-    local overlay = tremove(glowOverlays);
+    local overlay = table.remove(glowOverlays);
 
     if ( not overlay ) then
         numOverlays = numOverlays + 1;
@@ -933,7 +930,7 @@ function A:HideOverlay(button)
         end
 
         button.overlay:Hide();
-        tinsert(glowOverlays, overlay);
+        table.insert(glowOverlays, overlay);
         button.overlay = nil;
     end
 end
@@ -1245,20 +1242,26 @@ function A:GetTalentsString()
 end
 
 function A:SetTalentsProfile(name)
+    if ( A.inCombat ) then return; end
+    if ( not name or name == "" ) then return; end
+
     A:SetTalentsBrute(name);
+
+    if ( A.db.profile.switchGearWithTalents and A.db.profile.talentsProfiles[name].gearSet ) then
+        local setID = select(3, A:GetGearSetInfos(A.db.profile.talentsProfiles[name].gearSet));
+        C_EquipmentSet.UseEquipmentSet(setID);
+    end
+
+    A:UpdateBroker();
+    A:RefreshTooltip();
 end
 
 function A:SetTalentsBrute(name)
-    if ( A.inCombat ) then return; end
-
     if ( A.db.profile.talentsProfiles[name] and A.db.profile.talentsProfiles[name].talents ) then
         for k,v in pairs(A.db.profile.talentsProfiles[name].talents) do
             A:LearnTalent(v);
         end
     end
-
-    A:UpdateBroker();
-    A:RefreshTooltip();
 end
 
 --- This will return true if we got at least 1 talent profile for the current spec
@@ -1640,12 +1643,7 @@ function A:RefreshTooltip()
 end
 
 function A:Tooltip(anchorFrame)
-    if ( A.tip:IsAcquired("BrokerSpecializationsTooltip") ) then
-        local tip = A.tip:Acquire("BrokerSpecializationsTooltip");
-
-        tip:Release();
-        tip = nil;
-    end
+    A:HideTooltip();
 
     local tip = A.tip:Acquire("BrokerSpecializationsTooltip", 2, "LEFT", "LEFT");
     local line;
@@ -1805,6 +1803,7 @@ A.aceDefaultDB =
         brokerShortText = nil,
         brokerShortNames = nil,
         brokerRedNone = nil,
+        switchGearWithTalents = nil,
     },
 };
 
@@ -1894,13 +1893,12 @@ function A:PLAYER_TALENT_UPDATE()
 
     local oldSpec = A.currentSpec;
     A.currentSpec = GetSpecialization();
+    A.currentTalents = A:GetTalentsString();
 
     if ( oldSpec ~= A.currentSpec ) then
         A:SetSpecializationsDatabase();
         A:SetGearAndLootAfterSwitch();
     end
-
-    A.currentTalents = A:GetTalentsString();
 
     A:UpdateBroker();
     A:RefreshTooltip();
