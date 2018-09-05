@@ -38,8 +38,10 @@ L["Profiles"] = true;
 L["PvP"] = true;
 
 L["Rename"] = true;
+L["Row"] = true;
 
 L["Specializations"] = true;
+L["Switch"] = true;
 
 L["Talents"] = true;
 L["Text"] = true;
@@ -201,6 +203,7 @@ L["Select this to use gear set %s when switching to talents profile %s."] = true
 L["Switch gear with talents"] = true;
 L["Switch to the selected equipment set when switching a talents profile. Set this within the talents profiles tab.\nIf this is enabled with specialization switch, the addon will try to equip the talents profile defined gear set."] = true;
 L["Click this to clear the selected gear set."] = true;
+L["Switch the talent row %d."] = true;
 
 -- Tooltip
 L["Current specialization"] = true;

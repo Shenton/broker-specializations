@@ -25,6 +25,18 @@ local A = _G["BrokerSpecializationsGlobal"];
 local L = A.L;
 
 --[[-------------------------------------------------------------------------------
+    Variables
+-------------------------------------------------------------------------------]]--
+
+A.dualSpecSelectValues = {};
+
+do
+    for k,v in ipairs(A.specDB) do
+        A.dualSpecSelectValues[k] = "|T"..v.icon..":16:16:0:0|t "..v.name;
+    end
+end
+
+--[[-------------------------------------------------------------------------------
     Configuration Panel
 -------------------------------------------------------------------------------]]--
 
@@ -33,12 +45,6 @@ local profilesDeleteTable = {};
 local shortNameInput;
 
 function A:ConfigurationPanel()
-    local dualSpecSelectValues = {};
-
-    for k,v in ipairs(A.specDB) do
-        dualSpecSelectValues[k] = "|T"..v.icon..":16:16:0:0|t "..v.name;
-    end
-
     local configPanel =
     {
         order = 0,
@@ -122,7 +128,7 @@ function A:ConfigurationPanel()
                                 desc = L["Select the first specialization for the Dual mode."],
                                 disabled = not A.db.profile.dualSpecEnabled,
                                 type = "select",
-                                values = dualSpecSelectValues,
+                                values = A.dualSpecSelectValues,
                                 set = function(info, val)
                                     if ( val == A.db.profile.dualSpecTwo ) then
                                         A:Message(L["You cannot select the same specialization with Dual Specialization Mode."], 1);
@@ -139,7 +145,7 @@ function A:ConfigurationPanel()
                                 desc = L["Select the second specialization for the Dual mode."],
                                 disabled = not A.db.profile.dualSpecEnabled,
                                 type = "select",
-                                values = dualSpecSelectValues,
+                                values = A.dualSpecSelectValues,
                                 set = function(info, val)
                                     if ( val == A.db.profile.dualSpecOne ) then
                                         A:Message(L["You cannot select the same specialization with Dual Specialization Mode."], 1);
@@ -778,31 +784,93 @@ function A:ConfigurationPanel()
             },
         };
 
+        --A.talentsDB
+        local currentSpecID = select(2, A:GetCurrentSpecInfos());
+
         order = 0;
-        for kk,vv in pairs(v.talents) do
-            local _, name, texture, _, _, spellID, _, row, column = GetTalentInfoByID(vv);
 
-            if ( name ) then
-                configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["list"..name] =
-                {
-                    order = order,
-                    type = "execute",
-                    name = name.." ("..row.." - "..column..")",
-                    desc = GetSpellDescription(spellID),
-                    image = texture,
-                }
-            else
-                configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["listNoLongerExists"..order] =
-                {
-                    order = order,
-                    type = "execute",
-                    name = L["Unknown"],
-                    desc = L["This talent no longer exists."],
-                    image = A.questionMark,
-                }
+        if ( v.specialization == currentSpecID ) then
+            for kk,vv in pairs(v.talents) do
+                local _, name, texture, _, _, spellID, _, row, column = GetTalentInfoByID(vv);
+
+                local selectValues = {};
+
+                for k,v in ipairs(A.talentsDB[row]) do
+                    selectValues[k] = "|T"..v.icon..":16:16:0:0|t "..v.name;
+                end
+
+                if ( name ) then
+                    configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["list"..name] =
+                    {
+                        order = order,
+                        name = L["Row"].." "..row,
+                        type = "group",
+                        inline = true,
+                        args =
+                        {
+                            icon =
+                            {
+                                order = 1,
+                                type = "execute",
+                                name = name.." ("..row.." - "..column..")",
+                                desc = GetSpellDescription(spellID),
+                                image = texture,
+                            },
+                            switch =
+                            {
+                                order = 2,
+                                type = "select",
+                                name = L["Switch"],
+                                desc = L["Switch the talent row %d."]:format(row),
+                                values = selectValues,
+                                set = function(info, val)
+                                    A.db.profile.talentsProfiles[k].talents[row] = A.talentsDB[row][val].talentID;
+                                    A.db.profile.talentsProfiles[k].string = A:ReplaceChar(row, A.db.profile.talentsProfiles[k].string, val);
+                                    A:UpdateBroker();
+                                end,
+                                get = function() return column; end,
+                            },
+                        },
+                    };
+                else
+                    configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["listNoLongerExists"..order] =
+                    {
+                        order = order,
+                        type = "execute",
+                        name = L["Unknown"],
+                        desc = L["This talent no longer exists."],
+                        image = A.questionMark,
+                    };
+                end
+
+                order = order + 1;
             end
+        else
+            for kk,vv in pairs(v.talents) do
+                local _, name, texture, _, _, spellID, _, row, column = GetTalentInfoByID(vv);
 
-            order = order + 1;
+                if ( name ) then
+                    configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["list"..name] =
+                    {
+                        order = order,
+                        type = "execute",
+                        name = name.." ("..row.." - "..column..")",
+                        desc = GetSpellDescription(spellID),
+                        image = texture,
+                    }
+                else
+                    configPanel.args.talentsProfiles.args[tostring(k)].args.listProfiles.args["listNoLongerExists"..order] =
+                    {
+                        order = order,
+                        type = "execute",
+                        name = L["Unknown"],
+                        desc = L["This talent no longer exists."],
+                        image = A.questionMark,
+                    }
+                end
+
+                order = order + 1;
+            end
         end
 
         order = 101;

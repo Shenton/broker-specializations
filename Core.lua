@@ -354,6 +354,7 @@ end
 -- @param str The string
 -- @param r The character
 function A:ReplaceChar(pos, str, r)
+    r = tostring(r);
     return ("%s%s%s"):format(str:sub(1,pos-1), r, str:sub(pos+1))
 end
 
@@ -397,6 +398,7 @@ function A:SetEverything()
     A:SetBindingsNames();
     A:SetLootSpecOptions();
     A:SetGearSetsDatabase();
+    A:SetTalentsDatabase();
     A:UpdateBroker();
     A:SetTalentsSwitchBuffsNames();
     A:CacheTalentsSwitchItems();
@@ -638,7 +640,7 @@ function A:SetGearSetsDatabase()
     A.gearSetsDB = {};
 
     if ( num > 0 ) then
-        for i=0,num do -- Equipment sets start at 0, nice one here blizzard
+        for i=0,num do
             local name, icon, id = C_EquipmentSet.GetEquipmentSetInfo(i);
 
             if ( name and id ) then
@@ -1290,6 +1292,31 @@ function A:GetCurrentUsedTalentsProfile()
     return nil;
 end
 
+function A:SetTalentsDatabase()
+    A.talentsDB = {};
+
+    local talentGroup = GetActiveSpecGroup(false);
+
+    for i=1,7 do
+        local tierAvailable = GetTalentTierInfo(i, talentGroup, false);
+
+        if ( not tierAvailable ) then break; end
+
+        A.talentsDB[i] = {};
+
+        for j=1,3 do
+            local talentID, name, icon = GetTalentInfo(i, j, talentGroup, false);
+
+            A.talentsDB[i][j] =
+            {
+                talentID = talentID,
+                name = name,
+                icon = icon,
+            };
+        end
+    end
+end
+
 --[[-------------------------------------------------------------------------------
     Hide spam
 -------------------------------------------------------------------------------]]--
@@ -1897,6 +1924,7 @@ function A:PLAYER_TALENT_UPDATE()
 
     if ( oldSpec ~= A.currentSpec ) then
         A:SetSpecializationsDatabase();
+        A:SetTalentsDatabase();
         A:SetGearAndLootAfterSwitch();
     end
 
@@ -1948,10 +1976,12 @@ function A:PLAYER_REGEN_ENABLED()
 end
 
 function A:PLAYER_LEVEL_UP(event, level)
-    if ( level >= 10) then
+    if ( A:IsEnabled() ) then
+        A:SetTalentsDatabase();
+    elseif ( level >= 10 ) then
+        A:UnregisterEvent("PLAYER_LEVEL_UP");
         A:Enable();
         A:PLAYER_ENTERING_WORLD();
-        A:UnregisterEvent("PLAYER_LEVEL_UP");
     end
 end
 
@@ -2092,6 +2122,7 @@ function A:OnEnable()
     A:RegisterEvent("EQUIPMENT_SWAP_FINISHED");
     A:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
     A:RegisterEvent("PLAYER_TALENT_UPDATE");
+    A:RegisterEvent("PLAYER_LEVEL_UP");
 
     -- Add the config loader to blizzard addon configuration panel
     A:AddToBlizzTemp();
