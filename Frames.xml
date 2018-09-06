@@ -327,15 +327,15 @@
                 </Anchors>
             </Button>
             <!-- Item button 1 -->
-            <Button name="$parentItemButton1" parentKey="ItemButton1" inherits="BrokerSpecializationsSecureButtonTemplate">
+            <Button name="$parentItemButtonTome" parentKey="ItemButtonTome" inherits="BrokerSpecializationsSecureButtonTemplate">
                 <Anchors>
                     <Anchor point="TOP" relativeTo="$parentTalentButtonRow7Col2" relativePoint="BOTTOM" x="-21" y="-6"/>
                 </Anchors>
             </Button>
             <!-- Item button 2 -->
-            <Button name="$parentItemButton2" inherits="BrokerSpecializationsSecureButtonTemplate">
+            <Button name="$parentItemButtonCodex" inherits="BrokerSpecializationsSecureButtonTemplate">
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="$parentItemButton1" relativePoint="RIGHT" x="6" y="0"/>
+                    <Anchor point="LEFT" relativeTo="$parentItemButtonTome" relativePoint="RIGHT" x="6" y="0"/>
                 </Anchors>
             </Button>
             <!-- Close button -->

@@ -215,6 +215,7 @@ L["With equipment set"] = true;
 L["With loot specialization"] = true;
 L["Pet specializations switch"] = true;
 L["You have %d %s in your bank."] = true;
+L["You have %d %s (old content item) in your bank."] = true;
 L["Current talents profile"] = true;
 L["Talents profiles switch"] = true;
 L["|cFFC79C6ELeft-Click: |cFF33FF99Open the quick talents switch panel.\n|cFFC79C6EShift+Left-Click: |cFF33FF99Open the quick PvP talents switch panel.\n|cFFC79C6ERight-Click: |cFF33FF99Open the quick access menu.\n|cFFC79C6EMiddle-Click: |cFF33FF99Open the configuration panel."] = true;

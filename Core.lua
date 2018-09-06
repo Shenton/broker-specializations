@@ -109,24 +109,37 @@ A.showLootSpecModes =
 
 A.talentsSwitchItems =
 {
-    { -- wod
+    tome =
+    {
+        -- wod
         141640, -- tome-of-the-clear-mind - require lvl 15, not usable above 100 - solo version
-        141641, -- codex-of-the-clear-mind - require lvl 15, not usable above 100 - group version
-    },
-    { -- legion
+        -- legion
         141446, -- tome-of-the-tranquil-mind - require lvl 15, no level restriction after that - solo version
+        -- bfa
+        153647, -- tome-of-the-quiet-mind - require lvl 15, no level restriction after that - solo version
+    },
+    codex =
+    {
+        -- wod
+        141641, -- codex-of-the-clear-mind - require lvl 15, not usable above 100 - group version
+        -- legion
         141333, -- codex-of-the-tranquil-mind - require lvl 15, no level restriction after that - group version
+        -- bfa
+        153646, -- codex-of-the-quiet-mind - require lvl 15, no level restriction after that - group version
     },
 };
 
 A.talentsSwitchBuffs =
 {
-    -- wod <= 100
+    -- wod
     227563, -- tome-of-the-clear-mind
     227565, -- codex-of-the-clear-mind
-    -- legion > 100
+    -- legion
     227041, -- tome-of-the-tranquil-mind
     226234, -- codex-of-the-tranquil-mind
+    -- bfa
+    256231, -- tome-of-the-quiet-mind
+    256230, -- codex-of-the-quiet-mind
 };
 
 A.iconsFileDataToFilePath =
@@ -867,7 +880,7 @@ function A:SetTalentsFrameForTalents()
     A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
 
     -- Anchor items buttons
-    A.talentsFrame.ItemButton1:SetPoint("TOP", A.talentsFrame.row7col2, "BOTTOM", -21, -6);
+    A.talentsFrame.ItemButtonTome :SetPoint("TOP", A.talentsFrame.row7col2, "BOTTOM", -21, -6);
 
     -- Set Frame height
     A.talentsFrame:SetHeight(430);
@@ -886,7 +899,7 @@ function A:SetTalentsFrameForPvp()
     -- A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
 
     -- Anchor items buttons
-    -- A.talentsFrame.ItemButton1:SetPoint("TOP", A.talentsFrame.row10col2, "BOTTOM", -21, -6);
+    -- A.talentsFrame.ItemButtonTome:SetPoint("TOP", A.talentsFrame.row10col2, "BOTTOM", -21, -6);
 
     -- Set Frame height
     -- A.talentsFrame:SetHeight(610);
@@ -937,6 +950,79 @@ function A:HideOverlay(button)
     end
 end
 
+function A:GetTalentsSwitchItemsTable()
+    local startIndex = 1;
+    local tomeTable = { count = 0, };
+    local codexTable = { count = 0, };
+    local lastCountBank = 0;
+    local lastCountBankItemName = "";
+
+    if ( UnitLevel("player") > 100 ) then -- Ignore wod items
+        startIndex = 2;
+    end
+
+    for i=startIndex,#A.talentsSwitchItems.tome do
+        local itemID = A.talentsSwitchItems.tome[i];
+        local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemID);
+        local count = GetItemCount(itemID, false);
+        local countBank = GetItemCount(itemID, true);
+
+        if ( (count > 0 and not tomeTable.itemID) or (i == #A.talentsSwitchItems.tome and not tomeTable.itemID) ) then
+            tomeTable =
+            {
+                itemID = itemID,
+                itemTexture = itemTexture,
+                count = count,
+                countBank = countBank,
+                oldCountBank = 0,
+                oldCountBankItemName = "",
+                itemName = itemName,
+            };
+
+            if ( lastCountBank > 0 ) then
+                tomeTable.oldCountBank = lastCountBank;
+                tomeTable.oldCountBankItemName = lastCountBankItemName;
+            end
+        elseif ( countBank > 0 ) then
+            lastCountBank = countBank;
+            lastCountBankItemName = itemName;
+        end
+    end
+
+    lastCountBank = 0;
+    lastCountBankItemName = "";
+
+    for i=startIndex,#A.talentsSwitchItems.codex do
+        local itemID = A.talentsSwitchItems.codex[i];
+        local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemID);
+        local count = GetItemCount(itemID, false);
+        local countBank = GetItemCount(itemID, true);
+
+        if ( (count > 0 and not codexTable.itemID) or (i == #A.talentsSwitchItems.codex and not codexTable.itemID) ) then
+            codexTable =
+            {
+                itemID = itemID,
+                itemTexture = itemTexture,
+                count = count,
+                countBank = countBank,
+                oldCountBank = 0,
+                oldCountBankItemName = "",
+                itemName = itemName,
+            };
+
+            if ( lastCountBank > 0 ) then
+                codexTable.oldCountBank = lastCountBank;
+                codexTable.oldCountBankItemName = lastCountBankItemName;
+            end
+        elseif ( countBank > 0 ) then
+            lastCountBank = countBank;
+            lastCountBankItemName = itemName;
+        end
+    end
+
+    return tomeTable, codexTable;
+end
+
 function A:TalentsFrameUpdate()
     local talentGroup = GetActiveSpecGroup(false);
     local tiers = GetMaxTalentTier();
@@ -977,34 +1063,42 @@ function A:TalentsFrameUpdate()
     -- Talents switch items
     -- No need to check the minimum level requirement (which is 15)
     -- If we are here the player got some talents to choose from
-    local count, countBank, tbl;
+    local tome, codex = A:GetTalentsSwitchItemsTable();
 
-    if ( UnitLevel("player") > 100 ) then
-        tbl = A.talentsSwitchItems[2];
+    local button = _G["BrokerSpecializationsTalentsFrameItemButtonTome"];
+    button:SetID(tome.itemID);
+    button.icon:SetTexture(tome.itemTexture);
+    button.count:SetText(tome.count);
+    button.countNum = tome.count;
+    button.countBank = tome.countBank;
+    button.oldCountBank = tome.oldCountBank;
+    button.oldCountBankItemName = tome.oldCountBankItemName;
+    button.itemName = tome.itemName;
+
+    if ( tome.count == 0 ) then
+        button:SetAttribute("item", nil);
+        button.icon:SetDesaturated(true);
     else
-        tbl = A.talentsSwitchItems[1];
+        button:SetAttribute("item", tome.itemName);
+        button.icon:SetDesaturated(false);
     end
 
-    for k,v in ipairs(tbl) do
-        local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(v);
-        local button = _G["BrokerSpecializationsTalentsFrameItemButton"..k];
+    button = _G["BrokerSpecializationsTalentsFrameItemButtonCodex"];
+    button:SetID(codex.itemID);
+    button.icon:SetTexture(codex.itemTexture);
+    button.count:SetText(codex.count);
+    button.countNum = codex.count;
+    button.countBank = codex.countBank;
+    button.oldCountBank = codex.oldCountBank;
+    button.oldCountBankItemName = codex.oldCountBankItemName;
+    button.itemName = codex.itemName;
 
-        count = GetItemCount(v, false);
-        countBank = GetItemCount(v, true);
-        button:SetID(v);
-        button.icon:SetTexture(itemTexture);
-        button.count:SetText(count);
-        button.countNum = count;
-        button.countBank = countBank;
-        button.itemName = itemName;
-
-        if ( count == 0 ) then
-            button:SetAttribute("item", nil);
-            button.icon:SetDesaturated(true);
-        else
-            button:SetAttribute("item", itemName);
-            button.icon:SetDesaturated(false);
-        end
+    if ( codex.count == 0 ) then
+        button:SetAttribute("item", nil);
+        button.icon:SetDesaturated(true);
+    else
+        button:SetAttribute("item", codex.itemName);
+        button.icon:SetDesaturated(false);
     end
 end
 
@@ -1067,8 +1161,6 @@ function A:SetSwitchItemsTooltip(frame)
     end
 
     -- Check if the player is already buffed
-    local index = UnitLevel("player") > 100 and 3 or 1; -- Start at index 3 if the player is above 100
-
     for i=1,40 do
         local buffName = UnitBuff("player", i);
 
@@ -1080,6 +1172,10 @@ function A:SetSwitchItemsTooltip(frame)
         else
             break;
         end
+    end
+
+    if ( frame.oldCountBank > 0 ) then
+        GameTooltip:AddLine(L["You have %d %s (old content item) in your bank."]:format(frame.oldCountBank, frame.oldCountBankItemName));
     end
 
     if ( frame.countNum == 0 and frame.countBank > 0 ) then
