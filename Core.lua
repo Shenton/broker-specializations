@@ -188,6 +188,9 @@ A.iconsFileDataToFilePath =
     [1247265] = "Interface/Icons/Ability_DemonHunter_SpecTank", -- ID: 581 - Class: DEMONHUNTER - Spec: Vengeance
 };
 
+A.buttonPoolCount = 0;
+A.buttonPool = {};
+
 -- Fake method until the config is loaded
 A.ConfigNotifyChange = function() end;
 
@@ -822,6 +825,28 @@ function A:TalentsFrameOnLoad(self)
     self.TitleText:SetPoint("TOP", self, "TOP", -12, -4);
     self.closeButton:SetText(L["Close"]);
     table.insert(UISpecialFrames, self:GetName());
+    self.buttonsPool = {};
+end
+
+function A:GetButtonFromPool()
+    local button = table.remove(A.buttonPool);
+
+    if ( button ) then return button; end
+
+    A.buttonPoolCount = A.buttonPoolCount + 1;
+    button = CreateFrame("Button", "BrokerSpecializationsTalentButton"..A.buttonPoolCount, A.talentsFrame, "BrokerSpecializationsButtonTemplate");
+
+    return button;
+end
+
+function A:StoreButtonToPool(button)
+    A:HideOverlay(button);
+    button:ClearAllPoints();
+    button.talentGroup = nil;
+    button:SetID(0);
+    SetItemButtonTexture(button, nil);
+    button:RegisterForDrag();
+    table.insert(A.buttonPool, button);
 end
 
 function A:TalentsFrameOnShow(self)
@@ -841,12 +866,13 @@ end
 
 function A:TalentsFrameOnHide(self)
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
+    A.talentsFrame.currentTab = nil;
 
-    for i=1,7 do
-        for j=1,3 do
-            local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
-            A:HideOverlay(button);
-        end
+    local button = table.remove(A.talentsFrame.buttonsPool);
+
+    while button do
+        A:StoreButtonToPool(button);
+        button = table.remove(A.talentsFrame.buttonsPool);
     end
 end
 
@@ -854,6 +880,7 @@ function A:TalentsTabOnClick(self)
     if ( A.talentsFrame.currentTab == "talents" ) then return; end
 
     PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
+    A:SetTalentsFrameForTalents();
     A.talentsFrame.currentTab = "talents";
     A:TalentsFrameUpdate();
 end
@@ -868,6 +895,9 @@ function A:PvpTabOnClick(self) -- /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\ 
 end
 
 function A:SetTalentsFrameForTalents()
+    -- Already set, nothing to do here
+    if ( A.talentsFrame.currentTab == "talents" ) then return; end
+
     -- Title
     A.talentsFrame.TitleText:SetText(L["Talents"]);
 
@@ -879,11 +909,37 @@ function A:SetTalentsFrameForTalents()
     A.talentsFrame.PvpTab.Highlight:Show();
     A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
 
-    -- Anchor items buttons
-    A.talentsFrame.ItemButtonTome :SetPoint("TOP", A.talentsFrame.row7col2, "BOTTOM", -21, -6);
+    -- Buttons
+    local talentGroup = GetActiveSpecGroup(false);
+    local tiers = GetMaxTalentTier();
+    local lastRelativeTo = A.talentsFrame;
+
+    for i=1,tiers do
+        local button1 = A:GetButtonFromPool();
+        local button2 = A:GetButtonFromPool();
+        local button3 = A:GetButtonFromPool();
+
+        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button1;
+        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button2;
+        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button3;
+
+        button1:ClearAllPoints();
+        button2:ClearAllPoints();
+        button3:ClearAllPoints();
+
+        if ( i == 1 ) then
+            button2:SetPoint("TOP", lastRelativeTo, "TOP", 0, -68);
+        else
+            button2:SetPoint("TOP", lastRelativeTo, "BOTTOM", 0, -6);
+        end
+
+        button1:SetPoint("RIGHT", button2, "LEFT", -6, 0);
+        button3:SetPoint("LEFT", button2, "RIGHT", 6, 0);
+        lastRelativeTo = button2;
+    end
 
     -- Set Frame height
-    A.talentsFrame:SetHeight(430);
+    A.talentsFrame:SetHeight(134 + (42 * tiers));
 end
 
 function A:SetTalentsFrameForPvp()
@@ -1024,27 +1080,20 @@ function A:GetTalentsSwitchItemsTable()
 end
 
 function A:TalentsFrameUpdate()
-    local talentGroup = GetActiveSpecGroup(false);
-    local tiers = GetMaxTalentTier();
-
     -- Talents
     if ( A.talentsFrame.currentTab == "talents" ) then
-        A:SetTalentsFrameForTalents();
+        local talentGroup = GetActiveSpecGroup(false);
+        local tiers = GetMaxTalentTier();
+        local index = 1;
 
-        for i=1,7 do
+        for i=1,tiers do
             for j=1,3 do
                 local talentID, name, texture, selected, available = GetTalentInfo(i, j, talentGroup, false);
-                local button = _G["BrokerSpecializationsTalentsFrameTalentButtonRow"..i.."Col"..j];
+                local button = A.talentsFrame.buttonsPool[index];
 
                 button.talentGroup = talentGroup;
                 button:SetID(talentID);
                 SetItemButtonTexture(button, texture);
-
-                if ( i <= tiers ) then
-                    button.icon:SetDesaturated(false);
-                else
-                    button.icon:SetDesaturated(true);
-                end
 
                 if ( selected ) then
                     A:ShowOverlay(button);
@@ -1053,6 +1102,8 @@ function A:TalentsFrameUpdate()
                     A:HideOverlay(button);
                     button:RegisterForDrag();
                 end
+
+                index = index + 1;
             end
         end
     --- PvP talents
@@ -1194,8 +1245,10 @@ function A:TalentsFrameShowOrHide(relativeTo, tab)
 
         if ( not tab ) then
             tab = "talents";
+            A:SetTalentsFrameForTalents();
         else -- /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\ THIS WILL NEED MODIFICATION /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\
             tab = "talents";
+            A:SetTalentsFrameForTalents();
             A:Message("PvP talents frame is deactivated until I can find a proper way to display it.", 1);
         end
 
