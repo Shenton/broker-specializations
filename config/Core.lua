@@ -37,6 +37,31 @@ do
     end
 end
 
+A.talentsDB = {};
+
+do
+    local talentGroup = GetActiveSpecGroup(false);
+
+    for i=1,7 do
+        local tierAvailable = GetTalentTierInfo(i, talentGroup, false);
+
+        if ( not tierAvailable ) then break; end
+
+        A.talentsDB[i] = {};
+
+        for j=1,3 do
+            local talentID, name, icon = GetTalentInfo(i, j, talentGroup, false);
+
+            A.talentsDB[i][j] =
+            {
+                talentID = talentID,
+                name = name,
+                icon = icon,
+            };
+        end
+    end
+end
+
 --[[-------------------------------------------------------------------------------
     Configuration Panel
 -------------------------------------------------------------------------------]]--
