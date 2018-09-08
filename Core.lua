@@ -22,7 +22,7 @@ local tostring = tostring;
 local time = time;
 
 -- GLOBALS: PlaySound, DEFAULT_CHAT_FRAME, GetSpecialization, GetNumSpecializations, GetSpecializationInfo
--- GLOBALS: GetLootSpecialization, SetLootSpecialization, SetSpecialization, C_EquipmentSet
+-- GLOBALS: GetLootSpecialization, SetLootSpecialization, SetSpecialization, C_EquipmentSet, C_PvP
 -- GLOBALS: UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, InterfaceOptions_AddCategory
 -- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame, SOUNDKIT, tContains
 -- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
@@ -33,8 +33,9 @@ local time = time;
 -- GLOBALS: ChatFrame_AddMessageEventFilter, ERR_SPELL_UNLEARNED_S, ERR_LEARN_ABILITY_S, ERR_LEARN_PASSIVE_S
 -- GLOBALS: ERR_LEARN_SPELL_S, ERR_PET_LEARN_ABILITY_S, ERR_PET_LEARN_SPELL_S, ERR_PET_SPELL_UNLEARNED_S
 -- GLOBALS: GetActiveSpecGroup, StaticPopup_Show, LearnPvpTalent, GetTalentInfo, LearnTalent, UnitBuff, IsResting
--- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture
+-- GLOBALS: GetMaxTalentTier, GetItemInfo, GetSpellInfo, GetItemCount, SetItemButtonTexture, C_SpecializationInfo
 -- GLOBALS: UISpecialFrames, ButtonFrameTemplate_HidePortrait, UnitFactionGroup, UnitClass, IsControlKeyDown
+-- GLOBALS: ButtonFrameTemplate_HideAttic, GetPvpTalentInfoByID, SHOW_TALENT_LEVEL, SHOW_PVP_TALENT_LEVEL
 
 --[[-------------------------------------------------------------------------------
     Libs & addon global
@@ -1254,7 +1255,6 @@ function A:TalentsFrameUpdate()
 
         for i=1,#slotInfo.availableTalentIDs do
             local button = A.talentsFrame.buttonsPool[index];
-            local data = A.talentsFrame.pvpTalentsDB[j];
             local selected = slotInfo.selectedTalentID == slotInfo.availableTalentIDs[i] and true or nil;
             local talentID, _, texture = GetPvpTalentInfoByID(slotInfo.availableTalentIDs[i], talentGroup, false);
 

@@ -14,6 +14,7 @@ local ipairs = ipairs;
 local _G = _G;
 local pairs = pairs;
 local tostring = tostring;
+local select = select;
 
 -- GLOBALS: LibStub, GetTalentInfoByID, GetSpellDescription
 
