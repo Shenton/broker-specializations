@@ -188,9 +188,6 @@ A.iconsFileDataToFilePath =
     [1247265] = "Interface/Icons/Ability_DemonHunter_SpecTank", -- ID: 581 - Class: DEMONHUNTER - Spec: Vengeance
 };
 
-A.buttonPoolCount = 0;
-A.buttonPool = {};
-
 -- Fake method until the config is loaded
 A.ConfigNotifyChange = function() end;
 
@@ -400,6 +397,7 @@ end
 function A:SetEverything()
     A.playerClass = select(2, UnitClass("player"));
     A.playerFaction = UnitFactionGroup("player");
+    A.playerLevel = UnitLevel("player");
 
     A.currentSpec = GetSpecialization();
     A:SetSpecializationsDatabase();
@@ -414,7 +412,6 @@ function A:SetEverything()
     A:SetBindingsNames();
     A:SetLootSpecOptions();
     A:SetGearSetsDatabase();
-    A:SetTalentsDatabase();
     A:UpdateBroker();
     A:SetTalentsSwitchBuffsNames();
     A:CacheTalentsSwitchItems();
@@ -819,8 +816,12 @@ end
     Talents frame
 -------------------------------------------------------------------------------]]--
 
-function A:TalentsFrameOnLoad(self)
+-- Frame scripts
+function A:TalentsFrameOnLoad(self) -- Set the frame
+    ButtonFrameTemplate_HideAttic(self);
     ButtonFrameTemplate_HidePortrait(self);
+    self.TopTileStreaks:Hide();
+    self:SetClampedToScreen(true);
     self.TitleText:ClearAllPoints();
     self.TitleText:SetPoint("TOP", self, "TOP", -12, -4);
     self.closeButton:SetText(L["Close"]);
@@ -828,28 +829,7 @@ function A:TalentsFrameOnLoad(self)
     self.buttonsPool = {};
 end
 
-function A:GetButtonFromPool()
-    local button = table.remove(A.buttonPool);
-
-    if ( button ) then return button; end
-
-    A.buttonPoolCount = A.buttonPoolCount + 1;
-    button = CreateFrame("Button", "BrokerSpecializationsTalentButton"..A.buttonPoolCount, A.talentsFrame, "BrokerSpecializationsButtonTemplate");
-
-    return button;
-end
-
-function A:StoreButtonToPool(button)
-    A:HideOverlay(button);
-    button:ClearAllPoints();
-    button.talentGroup = nil;
-    button:SetID(0);
-    SetItemButtonTexture(button, nil);
-    button:RegisterForDrag();
-    table.insert(A.buttonPool, button);
-end
-
-function A:TalentsFrameOnShow(self)
+function A:TalentsFrameOnShow(self) -- Set the pvp tab icon, call the data update method
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_OPEN);
 
     -- Set the pvp icon
@@ -864,10 +844,41 @@ function A:TalentsFrameOnShow(self)
     A:TalentsFrameUpdate();
 end
 
-function A:TalentsFrameOnHide(self)
+function A:TalentsFrameOnHide(self) -- Clean the buttons
     PlaySound(SOUNDKIT.IG_CHARACTER_INFO_CLOSE);
     A.talentsFrame.currentTab = nil;
+    A:StoreAllButtonToPool();
+end
 
+-- Frames pool system
+local buttonPoolCount = 0;
+local buttonPool = {};
+function A:GetButtonFromPool()
+    local button = table.remove(buttonPool);
+
+    if ( button ) then return button; end
+
+    buttonPoolCount = buttonPoolCount + 1;
+    button = CreateFrame("Button", "BrokerSpecializationsTalentButton"..buttonPoolCount, A.talentsFrame, "BrokerSpecializationsButtonTemplate");
+
+    return button;
+end
+
+function A:StoreButtonToPool(button)
+    button:Hide();
+    A:HideOverlay(button);
+    button:ClearAllPoints();
+    button.talentGroup = nil;
+    button:SetID(0);
+    SetItemButtonTexture(button, nil);
+    button:RegisterForDrag();
+    button.SpellHighlightTexture:SetShown(false);
+    button.icon:SetDesaturated(false);
+    button.pvpIndex = nil;
+    table.insert(buttonPool, button);
+end
+
+function A:StoreAllButtonToPool()
     local button = table.remove(A.talentsFrame.buttonsPool);
 
     while button do
@@ -876,91 +887,7 @@ function A:TalentsFrameOnHide(self)
     end
 end
 
-function A:TalentsTabOnClick(self)
-    if ( A.talentsFrame.currentTab == "talents" ) then return; end
-
-    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
-    A:SetTalentsFrameForTalents();
-    A.talentsFrame.currentTab = "talents";
-    A:TalentsFrameUpdate();
-end
-
-function A:PvpTabOnClick(self) -- /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\ THIS WILL NEED MODIFICATION /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\
-    A:Message("PvP talents frame is deactivated until I can find a proper way to display it.", 1);
-    -- if ( A.talentsFrame.currentTab == "pvp" ) then return; end
-
-    -- PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
-    -- A.talentsFrame.currentTab = "pvp";
-    -- A:TalentsFrameUpdate();
-end
-
-function A:SetTalentsFrameForTalents()
-    -- Already set, nothing to do here
-    if ( A.talentsFrame.currentTab == "talents" ) then return; end
-
-    -- Title
-    A.talentsFrame.TitleText:SetText(L["Talents"]);
-
-    -- Tabs
-    A.talentsFrame.TalentsTab.Hider:Hide();
-    A.talentsFrame.TalentsTab.Highlight:Hide();
-    A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
-    A.talentsFrame.PvpTab.Hider:Show();
-    A.talentsFrame.PvpTab.Highlight:Show();
-    A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
-
-    -- Buttons
-    local talentGroup = GetActiveSpecGroup(false);
-    local tiers = GetMaxTalentTier();
-    local lastRelativeTo = A.talentsFrame;
-
-    for i=1,tiers do
-        local button1 = A:GetButtonFromPool();
-        local button2 = A:GetButtonFromPool();
-        local button3 = A:GetButtonFromPool();
-
-        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button1;
-        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button2;
-        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button3;
-
-        button1:ClearAllPoints();
-        button2:ClearAllPoints();
-        button3:ClearAllPoints();
-
-        if ( i == 1 ) then
-            button2:SetPoint("TOP", lastRelativeTo, "TOP", 0, -68);
-        else
-            button2:SetPoint("TOP", lastRelativeTo, "BOTTOM", 0, -6);
-        end
-
-        button1:SetPoint("RIGHT", button2, "LEFT", -6, 0);
-        button3:SetPoint("LEFT", button2, "RIGHT", 6, 0);
-        lastRelativeTo = button2;
-    end
-
-    -- Set Frame height
-    A.talentsFrame:SetHeight(134 + (42 * tiers));
-end
-
-function A:SetTalentsFrameForPvp()
-    -- Title
-    -- A.talentsFrame.TitleText:SetText(L["PvP"]);
-
-    -- Tabs
-    -- A.talentsFrame.PvpTab.Hider:Hide();
-    -- A.talentsFrame.PvpTab.Highlight:Hide();
-    -- A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
-    -- A.talentsFrame.TalentsTab.Hider:Show();
-    -- A.talentsFrame.TalentsTab.Highlight:Show();
-    -- A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
-
-    -- Anchor items buttons
-    -- A.talentsFrame.ItemButtonTome:SetPoint("TOP", A.talentsFrame.row10col2, "BOTTOM", -21, -6);
-
-    -- Set Frame height
-    -- A.talentsFrame:SetHeight(610);
-end
-
+-- Glowing overlay pool system
 local glowOverlays = {};
 local numOverlays = 0;
 function A:GetOverlay()
@@ -1006,6 +933,200 @@ function A:HideOverlay(button)
     end
 end
 
+-- Tabs methods
+function A:TalentsTabOnClick(self)
+    if ( A.talentsFrame.currentTab == "talents" ) then return; end
+
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
+    A:StoreAllButtonToPool();
+    A:SetTalentsFrameForTalents();
+    A.talentsFrame.currentTab = "talents";
+    A:TalentsFrameUpdate();
+end
+
+function A:PvpTabOnClick(self)
+    if ( A.talentsFrame.currentTab == "pvp" ) then return; end
+
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF);
+    A:StoreAllButtonToPool();
+    A:SetTalentsFrameForPvp();
+    A.talentsFrame.currentTab = "pvp";
+    A:TalentsFrameUpdate();
+end
+
+function A:SetTalentsFrameForTalents()
+    -- Already set, nothing to do here
+    if ( A.talentsFrame.currentTab == "talents" ) then return; end
+
+    -- Title
+    A.talentsFrame.TitleText:SetText(L["Talents"]);
+
+    -- Tabs
+    A.talentsFrame.TalentsTab.Hider:Hide();
+    A.talentsFrame.TalentsTab.Highlight:Hide();
+    A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
+    A.talentsFrame.PvpTab.Hider:Show();
+    A.talentsFrame.PvpTab.Highlight:Show();
+    A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
+
+    -- Buttons
+    local talentGroup = GetActiveSpecGroup(false);
+    local tiers = GetMaxTalentTier();
+    local lastRelativeTo = A.talentsFrame;
+
+    for i=1,tiers do
+        local button1 = A:GetButtonFromPool();
+        local button2 = A:GetButtonFromPool();
+        local button3 = A:GetButtonFromPool();
+
+        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button1;
+        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button2;
+        A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button3;
+
+        if ( i == 1 ) then
+            button2:SetPoint("TOP", lastRelativeTo, "TOP", 0, -68);
+        else
+            button2:SetPoint("TOP", lastRelativeTo, "BOTTOM", 0, -6);
+        end
+
+        button1:SetPoint("RIGHT", button2, "LEFT", -6, 0);
+        button3:SetPoint("LEFT", button2, "RIGHT", 6, 0);
+        lastRelativeTo = button2;
+    end
+
+    -- Set Frame size
+    A.talentsFrame:SetSize(148, 134 + (42 * tiers));
+end
+
+function A:SetTalentsFrameForPvp()
+    -- Already set, nothing to do here
+    if ( A.talentsFrame.currentTab == "pvp" ) then return; end
+
+    -- Title
+    A.talentsFrame.TitleText:SetText(L["PvP"]);
+
+    -- Tabs
+    A.talentsFrame.PvpTab.Hider:Hide();
+    A.talentsFrame.PvpTab.Highlight:Hide();
+    A.talentsFrame.PvpTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.78906250, 0.95703125);
+    A.talentsFrame.TalentsTab.Hider:Show();
+    A.talentsFrame.TalentsTab.Highlight:Show();
+    A.talentsFrame.TalentsTab.TabBg:SetTexCoord(0.01562500, 0.79687500, 0.61328125, 0.78125000);
+
+    -- Buttons
+    local lastRelativeTo = A.talentsFrame;
+    local heightCount = 1;
+    local widthCount = 3;
+
+    -- PvP "trinkets"
+    local button1 = A:GetButtonFromPool();
+    local button2 = A:GetButtonFromPool();
+    local button3 = A:GetButtonFromPool();
+
+    A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button1;
+    A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button2;
+    A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button3;
+    button1.pvpIndex = 1;
+    button2.pvpIndex = 1;
+    button3.pvpIndex = 1;
+    button1:SetPoint("TOPLEFT", lastRelativeTo, "TOPLEFT", 12, -68);
+    button2:SetPoint("LEFT", button1, "RIGHT", 6, 0);
+    button3:SetPoint("LEFT", button2, "RIGHT", 6, 0);
+    lastRelativeTo = button1;
+
+    -- PvP talents cache
+    A.talentsFrame.pvpTalentsDB = {};
+
+    local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(2);
+    local talentGroup = GetActiveSpecGroup(false);
+
+    for i=1,#slotInfo.availableTalentIDs do
+        local talentID, _, texture, _, _, _, unlocked = GetPvpTalentInfoByID(slotInfo.availableTalentIDs[i], talentGroup, false);
+
+        if ( unlocked ) then
+            A.talentsFrame.pvpTalentsDB[i] =
+            {
+                talentID = talentID,
+                texture = texture,
+            };
+        end
+    end
+
+    for i=2,4 do
+        local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(i);
+
+        if ( not slotInfo.enabled ) then break; end
+
+        local button1, buttonX, lastButton;
+
+        for j=1,#A.talentsFrame.pvpTalentsDB do
+            if ( j == 1 ) then
+                button1 = A:GetButtonFromPool();
+                A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = button1;
+                button1.pvpIndex = i;
+                lastButton = button1;
+            else
+                buttonX = A:GetButtonFromPool();
+                A.talentsFrame.buttonsPool[#A.talentsFrame.buttonsPool+1] = buttonX;
+                buttonX.pvpIndex = i;
+                buttonX:SetPoint("LEFT", lastButton, "RIGHT", 6, 0);
+                lastButton = buttonX;
+            end
+        end
+
+        button1:SetPoint("TOP", lastRelativeTo, "BOTTOM", 0, -6);
+        lastRelativeTo = button1;
+        heightCount = heightCount + 1;
+    end
+
+    -- Set Frame height
+    widthCount = #A.talentsFrame.pvpTalentsDB > 3 and #A.talentsFrame.pvpTalentsDB;
+    A.talentsFrame:SetSize(20 + (42 * widthCount), 134 + (42 * heightCount));
+end
+
+-- Tome/codex cache/data methods
+local talentsSwitchItemsCached = {};
+function A:CacheTalentsSwitchItems()
+    for k,v in pairs(A.talentsSwitchItems) do
+        for kk,vv in ipairs(v) do
+            local itemName , _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(vv);
+
+            if ( not itemName or not itemTexture ) then
+                A:ScheduleTimer("CacheTalentsSwitchItems", 0.5);
+                return;
+            end
+
+            if ( not talentsSwitchItemsCached[k] ) then
+                talentsSwitchItemsCached[k] = {};
+            end
+
+            talentsSwitchItemsCached[k][kk] =
+            {
+                itemName = itemName,
+                itemTexture = itemTexture,
+            };
+        end
+    end
+end
+
+function A:SetTalentsSwitchBuffsNames()
+    if ( not A.talentsSwitchBuffsNames ) then
+        A.talentsSwitchBuffsNames = {};
+
+        for _,v in ipairs(A.talentsSwitchBuffs) do
+            local name = GetSpellInfo(v);
+
+            if ( name ) then
+                A.talentsSwitchBuffsNames[#A.talentsSwitchBuffsNames+1] = name;
+            else
+                A:ScheduleTimer("SetTalentsSwitchBuffsNames", 0.5);
+                return;
+            end
+
+        end
+    end
+end
+
 function A:GetTalentsSwitchItemsTable()
     local startIndex = 1;
     local tomeTable = { count = 0, };
@@ -1019,7 +1140,8 @@ function A:GetTalentsSwitchItemsTable()
 
     for i=startIndex,#A.talentsSwitchItems.tome do
         local itemID = A.talentsSwitchItems.tome[i];
-        local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemID);
+        local itemName = talentsSwitchItemsCached.tome[i].itemName;
+        local itemTexture = talentsSwitchItemsCached.tome[i].itemTexture;
         local count = GetItemCount(itemID, false);
         local countBank = GetItemCount(itemID, true);
 
@@ -1050,7 +1172,8 @@ function A:GetTalentsSwitchItemsTable()
 
     for i=startIndex,#A.talentsSwitchItems.codex do
         local itemID = A.talentsSwitchItems.codex[i];
-        local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemID);
+        local itemName = talentsSwitchItemsCached.codex[i].itemName;
+        local itemTexture = talentsSwitchItemsCached.codex[i].itemTexture;
         local count = GetItemCount(itemID, false);
         local countBank = GetItemCount(itemID, true);
 
@@ -1079,6 +1202,26 @@ function A:GetTalentsSwitchItemsTable()
     return tomeTable, codexTable;
 end
 
+-- Button click methods
+function A:TalentButtonOnClick(button)
+    if ( A.inCombat ) then return; end
+
+    if ( button:GetParent().currentTab == "talents" ) then
+        if ( A:LearnTalent(button:GetID()) ) then
+            A:TalentsFrameUpdate();
+        end
+    else
+        if ( A:LearnPvpTalent(button:GetID(), button.pvpIndex) ) then
+            A:TalentsFrameUpdate();
+        end
+    end
+end
+
+function A:ItemButtonPostClick(button)
+    A:TalentsFrameUpdate();
+end
+
+-- The main update talents frame method
 function A:TalentsFrameUpdate()
     -- Talents
     if ( A.talentsFrame.currentTab == "talents" ) then
@@ -1088,12 +1231,63 @@ function A:TalentsFrameUpdate()
 
         for i=1,tiers do
             for j=1,3 do
-                local talentID, name, texture, selected, available = GetTalentInfo(i, j, talentGroup, false);
                 local button = A.talentsFrame.buttonsPool[index];
+                local talentID, _, texture, selected = GetTalentInfo(i, j, talentGroup, false);
 
                 button.talentGroup = talentGroup;
                 button:SetID(talentID);
                 SetItemButtonTexture(button, texture);
+                button.SpellHighlightTexture:SetShown(selected);
+                button:RegisterForDrag(selected and "LeftButton" or nil);
+                button.icon:SetDesaturated(not selected);
+                button:Show();
+                index = index + 1;
+            end
+        end
+    --- PvP talents
+    else
+        local talentGroup = GetActiveSpecGroup(false);
+        local selectedPvpTalents = C_SpecializationInfo.GetAllSelectedPvpTalentIDs();
+        local index = 1;
+
+        local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(1);
+
+        for i=1,#slotInfo.availableTalentIDs do
+            local button = A.talentsFrame.buttonsPool[index];
+            local data = A.talentsFrame.pvpTalentsDB[j];
+            local selected = slotInfo.selectedTalentID == slotInfo.availableTalentIDs[i] and true or nil;
+            local talentID, _, texture = GetPvpTalentInfoByID(slotInfo.availableTalentIDs[i], talentGroup, false);
+
+            button.talentGroup = talentGroup;
+            button:SetID(talentID);
+            SetItemButtonTexture(button, texture);
+
+            if ( selected ) then
+                A:ShowOverlay(button);
+                button:RegisterForDrag("LeftButton");
+            else
+                A:HideOverlay(button);
+                button:RegisterForDrag();
+            end
+
+            button:Show();
+            index = index + 1;
+        end
+
+        for i=2,4 do
+            local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(i);
+
+            if ( not slotInfo.enabled ) then break; end
+
+            for j=1,#A.talentsFrame.pvpTalentsDB do
+                local button = A.talentsFrame.buttonsPool[index];
+                local data = A.talentsFrame.pvpTalentsDB[j];
+                local selected = slotInfo.selectedTalentID == data.talentID and true or nil;
+                local unavailable = tContains(selectedPvpTalents, data.talentID) and true or nil;
+
+                button.talentGroup = talentGroup;
+                button:SetID(data.talentID);
+                SetItemButtonTexture(button, data.texture);
 
                 if ( selected ) then
                     A:ShowOverlay(button);
@@ -1103,12 +1297,11 @@ function A:TalentsFrameUpdate()
                     button:RegisterForDrag();
                 end
 
+                button.icon:SetDesaturated((unavailable and not selected));
+                button:Show();
                 index = index + 1;
             end
         end
-    --- PvP talents
-    else
-        --A:SetTalentsFrameForPvp();
     end
 
     -- Talents switch items
@@ -1153,55 +1346,7 @@ function A:TalentsFrameUpdate()
     end
 end
 
-function A:TalentButtonOnClick(button)
-    if ( A.inCombat ) then return; end
-
-    if ( button:GetParent().currentTab == "talents" ) then
-        if ( A:LearnTalent(button:GetID()) ) then
-            A:TalentsFrameUpdate();
-        end
-    else
-        if ( A:LearnPvpTalent(button:GetID()) ) then
-            A:TalentsFrameUpdate();
-        end
-    end
-end
-
-function A:ItemButtonPostClick(button)
-    A:TalentsFrameUpdate();
-end
-
-function A:SetTalentsSwitchBuffsNames()
-    if ( not A.talentsSwitchBuffsNames ) then
-        A.talentsSwitchBuffsNames = {};
-
-        for _,v in ipairs(A.talentsSwitchBuffs) do
-            local name = GetSpellInfo(v);
-
-            if ( name ) then
-                A.talentsSwitchBuffsNames[#A.talentsSwitchBuffsNames+1] = name;
-            else
-                A:ScheduleTimer("SetTalentsSwitchBuffsNames", 0.5);
-                return;
-            end
-
-        end
-    end
-end
-
-function A:CacheTalentsSwitchItems()
-    for k,v in ipairs(A.talentsSwitchItems) do
-        for kk,vv in ipairs(v) do
-            local itemName , _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(vv);
-
-            if ( not itemName or not itemTexture ) then
-                A:ScheduleTimer("CacheTalentsSwitchItems", 0.5);
-                return;
-            end
-        end
-    end
-end
-
+-- Display info on the tome/codex tooltip
 function A:SetSwitchItemsTooltip(frame)
     GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
     GameTooltip:SetItemByID(frame:GetID());
@@ -1237,19 +1382,27 @@ function A:SetSwitchItemsTooltip(frame)
     GameTooltip:Show();
 end
 
+-- This is the called method to display the frame
 function A:TalentsFrameShowOrHide(relativeTo, tab)
     if ( A.talentsFrame:IsShown() ) then
         A.talentsFrame:Hide();
     else
-        if ( GetMaxTalentTier() == 0 ) then return; end
+        tab = tab or "talents";
 
-        if ( not tab ) then
-            tab = "talents";
-            A:SetTalentsFrameForTalents();
-        else -- /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\ THIS WILL NEED MODIFICATION /!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\/!\
-            tab = "talents";
-            A:SetTalentsFrameForTalents();
-            A:Message("PvP talents frame is deactivated until I can find a proper way to display it.", 1);
+        if ( tab == "talents" ) then
+            if ( A.playerLevel < SHOW_TALENT_LEVEL ) then
+                return;
+            else
+                A:SetTalentsFrameForTalents();
+            end
+        elseif ( tab == "pvp" ) then
+            if ( not C_PvP.IsWarModeFeatureEnabled() or A.playerLevel < SHOW_PVP_TALENT_LEVEL ) then
+                return;
+            else
+                A:SetTalentsFrameForPvp();
+            end
+        else
+            return;
         end
 
         local point, relativePoint = A:SmartAnchor();
@@ -1262,6 +1415,7 @@ function A:TalentsFrameShowOrHide(relativeTo, tab)
     end
 end
 
+-- Combat protected talents selection methods, with spam removal
 function A:LearnTalent(id)
     if ( A.inCombat ) then
         A:Message(L["Cannot switch talents in combat."], 1);
@@ -1272,14 +1426,14 @@ function A:LearnTalent(id)
     LearnTalent(id);
 end
 
-function A:LearnPvpTalent(id)
+function A:LearnPvpTalent(id, index)
     if ( A.inCombat ) then
         A:Message(L["Cannot switch talents in combat."], 1);
         return;
     end
 
     A:SetChatFilterCallback();
-    LearnPvpTalent(id);
+    LearnPvpTalent(id, index);
 end
 
 --[[-------------------------------------------------------------------------------
@@ -1439,31 +1593,6 @@ function A:GetCurrentUsedTalentsProfile()
     end
 
     return nil;
-end
-
-function A:SetTalentsDatabase()
-    A.talentsDB = {};
-
-    local talentGroup = GetActiveSpecGroup(false);
-
-    for i=1,7 do
-        local tierAvailable = GetTalentTierInfo(i, talentGroup, false);
-
-        if ( not tierAvailable ) then break; end
-
-        A.talentsDB[i] = {};
-
-        for j=1,3 do
-            local talentID, name, icon = GetTalentInfo(i, j, talentGroup, false);
-
-            A.talentsDB[i][j] =
-            {
-                talentID = talentID,
-                name = name,
-                icon = icon,
-            };
-        end
-    end
 end
 
 --[[-------------------------------------------------------------------------------
@@ -2073,7 +2202,6 @@ function A:PLAYER_TALENT_UPDATE()
 
     if ( oldSpec ~= A.currentSpec ) then
         A:SetSpecializationsDatabase();
-        A:SetTalentsDatabase();
         A:SetGearAndLootAfterSwitch();
     end
 
@@ -2126,7 +2254,9 @@ end
 
 function A:PLAYER_LEVEL_UP(event, level)
     if ( A:IsEnabled() ) then
-        A:SetTalentsDatabase();
+        A.playerLevel = UnitLevel("player");
+        A.playerLeveledUpTalents = true;
+        A.playerLeveledUpPvp = true;
     elseif ( level >= 10 ) then
         A:UnregisterEvent("PLAYER_LEVEL_UP");
         A:Enable();

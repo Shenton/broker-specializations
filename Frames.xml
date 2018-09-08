@@ -14,6 +14,12 @@
                         <Anchor point="CENTER" x="0" y="0"/>
                     </Anchors>
                 </Texture>
+                <Texture parentKey="SpellHighlightTexture" atlas="bags-newitem" useAtlasSize="false" alphaMode="ADD" hidden="true">
+                    <Size x="44" y="44"/>
+                    <Anchors>
+                        <Anchor point="CENTER"/>
+                    </Anchors>
+                </Texture>
             </Layer>
             <!--<Layer level="ARTWORK" textureSubLevel="2">
                 <FontString name="$parentHotKey" inherits="NumberFontNormalSmallGray" justifyH="RIGHT">
@@ -46,7 +52,7 @@
                 if ( self:GetParent().currentTab == "talents" ) then
                     GameTooltip:SetTalent(self:GetID(), false, self.talentGroup);
                 else
-                    GameTooltip:SetPvpTalent(self:GetID(), false, self.talentGroup);
+                    GameTooltip:SetPvpTalent(self:GetID(), false, self.talentGroup, self.pvpIndex);
                 end
             </OnEnter>
             <OnLeave>
@@ -57,7 +63,7 @@
                     if ( self:GetParent().currentTab == "talents" ) then
                         GameTooltip:SetTalent(self:GetID(), false, self.talentGroup);
                     else
-                        GameTooltip:SetPvpTalent(self:GetID(), false, self.talentGroup);
+                        GameTooltip:SetPvpTalent(self:GetID(), false, self.talentGroup, self.pvpIndex);
                     end
                 end
             </OnUpdate>
@@ -170,7 +176,7 @@
             </Layer>
             <Layer level="HIGHLIGHT">
                 <Texture parentKey="Highlight" file="Interface\PaperDollInfoFrame\PaperDollSidebarTabs">
-                    <Size x="31" y="31"/>	
+                    <Size x="31" y="31"/>   
                     <Anchors>
                         <Anchor point="TOPLEFT" x="2" y="-3"/>
                     </Anchors>
@@ -181,7 +187,6 @@
     </Button>
 
     <Frame name="BrokerSpecializationsTalentsFrame" parent="UIParent" framestrata="DIALOG" hidden="true" inherits="ButtonFrameTemplate">
-        <Size x="148" y="430"/>
         <Anchors>
             <Anchor point="CENTER" relativeTo="$parent"/>
         </Anchors>
