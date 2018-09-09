@@ -23,7 +23,7 @@ local time = time;
 
 -- GLOBALS: PlaySound, DEFAULT_CHAT_FRAME, GetSpecialization, GetNumSpecializations, GetSpecializationInfo
 -- GLOBALS: GetLootSpecialization, SetLootSpecialization, SetSpecialization, C_EquipmentSet, C_PvP
--- GLOBALS: UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, InterfaceOptions_AddCategory
+-- GLOBALS: UIDropDownMenu_AddButton, UIDROPDOWNMENU_MENU_VALUE, InterfaceOptions_AddCategory, SortEquipmentSetIDs
 -- GLOBALS: CloseDropDownMenus, LoadAddOn, INTERFACEOPTIONS_ADDONCATEGORIES, CreateFrame, SOUNDKIT, tContains
 -- GLOBALS: InterfaceAddOnsList_Update, InterfaceOptionsFrame_OpenToCategory, LibStub, UnitLevel, ToggleDropDownMenu
 -- GLOBALS: GameTooltip, BINDING_HEADER_BROKERSPECIALIZATIONS, BINDING_NAME_BROKERSPECIALIZATIONSONE
@@ -649,13 +649,13 @@ end
 
 --- Set gear sets database
 function A:SetGearSetsDatabase()
-    local num = C_EquipmentSet.GetNumEquipmentSets();
+    local equipmentSetIDs = SortEquipmentSetIDs(C_EquipmentSet.GetEquipmentSetIDs())
 
     A.gearSetsDB = {};
 
-    if ( num > 0 ) then
-        for i=0,num do
-            local name, icon, id = C_EquipmentSet.GetEquipmentSetInfo(i);
+    if ( #equipmentSetIDs > 0 ) then
+        for i=1,#equipmentSetIDs do
+            local name, icon, id = C_EquipmentSet.GetEquipmentSetInfo(equipmentSetIDs[i]);
 
             if ( name and id ) then
                 icon = icon or A.questionMark;
@@ -675,14 +675,13 @@ end
 -- but for that I will have to monitor every modification of the user equipment
 -- and those events fire a lot
 function A:GetCurrentGearSet()
-    local num = C_EquipmentSet.GetNumEquipmentSets();
-    local name, icon, _, current;
+    local equipmentSetIDs = SortEquipmentSetIDs(C_EquipmentSet.GetEquipmentSetIDs())
 
-    if ( num > 0 ) then
-        for i=1,num do
-            name, icon, _, current = C_EquipmentSet.GetEquipmentSetInfo(i-1);
+    if ( #equipmentSetIDs > 0 ) then
+        for i=1,#equipmentSetIDs do
+            local name, icon, _, current, numItems = C_EquipmentSet.GetEquipmentSetInfo(equipmentSetIDs[i]);
 
-            if ( current ) then
+            if ( (current and numItems > 8) ) then
                 icon = icon or A.questionMark;
 
                 return name, icon;
