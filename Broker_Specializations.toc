@@ -3,7 +3,7 @@
 ## Notes: A Data Broker add-on for quickly switching your specialization with gear set and loot specialization.
 ## Author: Shenton
 ## SavedVariables: brokerSpecializationsDB
-## Version: 1.4.4
+## Version: 1.4.5
 ## OptionalDeps: Ace3, LibDBIcon-1.0, LibQTip-1.0
 
 #@no-lib-strip@

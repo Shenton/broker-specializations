@@ -113,16 +113,18 @@ A.talentsSwitchItems =
     tome =
     {
         -- wod
-        141640, -- tome-of-the-clear-mind - require lvl 15, not usable above 100 - solo version
+        141640, -- tome-of-the-clear-mind - require lvl 15, not usable above 100 (really 109, the codex is 100 max, but I won't add an exeption for 9 levels that take less than a day to get)
         -- legion
-        141446, -- tome-of-the-tranquil-mind - require lvl 15, no level restriction after that - solo version
+        141446, -- tome-of-the-tranquil-mind - require lvl 15, no level restriction after that - crafted
+        143780, -- tome-of-the-tranquil-mind - require lvl 15, no level restriction after that - bop - from the intro to legion questline
+        143785, -- tome-of-the-tranquil-mind - require lvl 15, no level restriction after that - bop - ?
         -- bfa
-        153647, -- tome-of-the-quiet-mind - require lvl 15, no level restriction after that - solo version
+        153647, -- tome-of-the-quiet-mind - require lvl 15, no level restriction after that - crafted
     },
     codex =
     {
         -- wod
-        141641, -- codex-of-the-clear-mind - require lvl 15, not usable above 100 - group version
+        141641, -- codex-of-the-clear-mind - require lvl 15, not usable above 100 - crafted
         -- legion
         141333, -- codex-of-the-tranquil-mind - require lvl 15, no level restriction after that - group version
         -- bfa
@@ -1128,15 +1130,11 @@ function A:SetTalentsSwitchBuffsNames()
 end
 
 function A:GetTalentsSwitchItemsTable()
-    local startIndex = 1;
-    local tomeTable = { count = 0, };
-    local codexTable = { count = 0, };
+    local startIndex = A.playerLevel > 100 and 2 or 1; -- Ignore wod items
+    local tomeTable = {};
+    local codexTable = {};
     local lastCountBank = 0;
     local lastCountBankItemName = "";
-
-    if ( UnitLevel("player") > 100 ) then -- Ignore wod items
-        startIndex = 2;
-    end
 
     for i=startIndex,#A.talentsSwitchItems.tome do
         local itemID = A.talentsSwitchItems.tome[i];
